@@ -24,4 +24,4 @@ typedef struct _cancion
 } Cancion;
 
 typedef Cancion *NodoPtr;
-typedef Cancion *lista;
+typedef Cancion *Lista;
