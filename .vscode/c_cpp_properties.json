@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "C:/raylib/raylib/src",
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "PLATFORM_DESKTOP",
+                "GRAPHICS_API_OPENGL_33"
+            ],
+            "compilerPath": "C:/raylib/w64devkit/bin/gcc.exe",
+            "cStandard": "c99",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}
