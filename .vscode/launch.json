@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug",
+            "name": "Debug Raylib",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/proyecto.exe",
@@ -13,7 +13,28 @@
             "externalConsole": false,
             "MIMode": "gdb",
             "miDebuggerPath": "C:/raylib/w64devkit/bin/gdb.exe",
-            "preLaunchTask": "build"
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build debug"
+        },
+        {
+            "name": "Run Raylib",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/proyecto.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:/raylib/w64devkit/bin/gdb.exe",
+            "preLaunchTask": "build raylib"
         }
     ]
 }

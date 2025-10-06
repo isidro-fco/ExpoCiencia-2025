@@ -2,14 +2,44 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
+            "label": "build raylib",
             "type": "shell",
-            "command": "make",
+            "command": "C:/raylib/w64devkit/bin/gcc.exe",
+            "args": [
+                "-o", "${workspaceFolder}/proyecto.exe",
+                "${workspaceFolder}/src/main.c",
+                "-I", "C:/raylib/raylib/src",
+                "-L", "C:/raylib/raylib/src",
+                "-lraylib",
+                "-lwinmm",
+                "-lgdi32",
+                "-luser32",
+                "-lshell32"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": []
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "build debug",
+            "type": "shell",
+            "command": "C:/raylib/w64devkit/bin/gcc.exe",
+            "args": [
+                "-g", "-O0",
+                "-o", "${workspaceFolder}/proyecto.exe",
+                "${workspaceFolder}/src/main.c",
+                "-I", "C:/raylib/raylib/src",
+                "-L", "C:/raylib/raylib/src",
+                "-lraylib",
+                "-lwinmm",
+                "-lgdi32",
+                "-luser32",
+                "-lshell32"
+            ],
+            "group": "build",
+            "problemMatcher": ["$gcc"]
         }
     ]
 }

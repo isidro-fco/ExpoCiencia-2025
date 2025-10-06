@@ -25,3 +25,6 @@ typedef struct _cancion
 
 typedef Cancion *NodoPtr;
 typedef Cancion *Lista;
+
+static int ancho_pantalla;
+static int alto_pantalla;
