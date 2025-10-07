@@ -1,15 +1,22 @@
+// CimaBits - ExpoCiencias 2025
+//******************************************************************************************************
+// LIBRERIAS
 #include "raylib.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 #include <math.h>
 #include <stdbool.h>
 #include <time.h>
 
+//******************************************************************************************************
+// CONSTANTES
 #define ANCHO_PANTALLA 1920
 #define ALTO_PANTALLA 1080
-#define ANCHO_FONDO 3840
-#define ALTO_FONDO 2160
 
+//******************************************************************************************************
+// ESTRUCTURAS
 typedef struct _cancion
 {
     char titulo[65];
@@ -26,5 +33,31 @@ typedef struct _cancion
 typedef Cancion *NodoPtr;
 typedef Cancion *Lista;
 
-static int ancho_pantalla;
-static int alto_pantalla;
+//******************************************************************************************************
+// PORTOTIPOS
+int validar_duracion(const char *duracion);
+//******************************************************************************************************
+//-------------------------------------- FUNCIONES DE ESTRUCTURA ---------------------------------------
+//******************************************************************************************************
+int validar_duracion(const char *duracion)
+{
+    // VARIABLES LOCALES
+    int minutos, segundos;
+    // AQUI EMPIEZA LA FUNCION
+    if (sscanf(duracion, "%d:%d", &minutos, &segundos) != 2)
+    {
+        return 0;
+    }
+    if (minutos < 0 || minutos > 59)
+    {
+        return 0;
+    }
+    if (segundos < 0 || segundos > 59)
+    {
+        return 0;
+    }
+    return 1;
+}
+//******************************************************************************************************
+
+//******************************************************************************************************
