@@ -9,18 +9,18 @@ int main()
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
     InitWindow(ANCHO_PANTALLA, ALTO_PANTALLA, "Pantalla Completa");
 
-    Texture2D fondo = LoadTexture("Assets/fondo.jpg");
+    Texture2D fondo = LoadTexture("assets/fondo.jpg");
     SetTextureFilter(fondo, TEXTURE_FILTER_BILINEAR);
 
-    Font fuente_titulo = LoadFontEx("Assets/tipografia/TitanOne-Regular.ttf", 64, NULL, 0);
-    Font fuente1 = LoadFontEx("Assets/tipografia/BebasNeue-Regular.ttf", 64, NULL, 0);
-    Font fuente2 = LoadFontEx("Assets/tipografia/ChauPhilomeneOne-Regular.ttf", 64, NULL, 0);
+    Font fuente_titulo = LoadFontEx("assets/tipografia/TitanOne-Regular.ttf", 64, NULL, 0);
+    Font fuente1 = LoadFontEx("assets/tipografia/BebasNeue-Regular.ttf", 64, NULL, 0);
+    Font fuente2 = LoadFontEx("assets/tipografia/ChauPhilomeneOne-Regular.ttf", 64, NULL, 0);
 
     SetTextureFilter(fuente_titulo.texture, TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(fuente1.texture, TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(fuente2.texture, TEXTURE_FILTER_BILINEAR);
 
-    while (!WindowShouldClose())
+    while (!WindowShouldClose() || IsKeyPressed(KEY_ESCAPE))
     {
         BeginDrawing();
         ClearBackground(RAYWHITE);

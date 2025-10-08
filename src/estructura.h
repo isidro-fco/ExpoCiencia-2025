@@ -22,7 +22,7 @@ typedef struct _cancion
     char titulo[65];
     char artista[45];
     char duracion[8];
-    char portada[255];
+    char imagen[255];
     char audio[255];
     char video[255];
 
