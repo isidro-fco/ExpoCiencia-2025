@@ -80,7 +80,7 @@ typedef struct
 //**************************************************************************************************************************
 int validar_duracion(const char *duracion);
 CancionPTR crear_cancion();
-int agregar_cancion(CancionPTR playlist, const char *titulo, const char *artista, const char *duracion, const char *ruta_imagen, const char *ruta_audio, const char *ruta_video, int insertar);
+int agregar_cancion(CancionPTR *playlist, const char *titulo, const char *artista, const char *duracion, const char *ruta_imagen, const char *ruta_audio, const char *ruta_video, int insertar);
 void insertar_primero(CancionPTR nodo, CancionPTR *lista);
 void insertar_ultimo(CancionPTR nodo, CancionPTR *lista);
 
@@ -126,7 +126,7 @@ CancionPTR crear_cancion()
     return nueva;
 }
 //******************************************************************************************************
-int agregar_cancion(CancionPTR playlist, const char *titulo, const char *artista, const char *duracion, const char *ruta_imagen, const char *ruta_audio, const char *ruta_video, int insertar)
+int agregar_cancion(CancionPTR *playlist, const char *titulo, const char *artista, const char *duracion, const char *ruta_imagen, const char *ruta_audio, const char *ruta_video, int insertar)
 {
     CancionPTR nodo = crear_cancion();
     if (nodo == NULL)
@@ -148,10 +148,10 @@ int agregar_cancion(CancionPTR playlist, const char *titulo, const char *artista
     switch (insertar)
     {
     case 1:
-        insertar_primero(nodo, &playlist);
+        insertar_primero(nodo, playlist);
         break;
     case 2:
-        insertar_ultimo(nodo, &playlist);
+        insertar_ultimo(nodo, playlist);
         break;
     }
 

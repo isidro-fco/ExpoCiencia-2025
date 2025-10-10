@@ -45,7 +45,7 @@ void pantalla_desarrollador(Font fuente1, Font fuente2, Font fuente3);
 void secciones_visuales_encabezados();
 void secciones_visuales_musica();
 void secciones_visuales_video();
-int formulario(CancionPTR playlist, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3);
+int formulario(CancionPTR *playlist, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3);
 
 //**************************************************************************************************************************
 //  FUNCIONES VISUALES
@@ -129,7 +129,7 @@ void secciones_visuales_video()
     DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.7, ALTO_PANTALLA * 0.712, ANCHO_PANTALLA * 0.29, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
 }
 //**************************************************************************************************************************
-int formulario(CancionPTR playlist, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3)
+int formulario(CancionPTR *playlist, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3)
 {
     bool formulario_completado = false;
     bool duracion_valida = false;
@@ -488,7 +488,7 @@ int formulario(CancionPTR playlist, Texture2D fondo, Font fuente1, Font fuente2,
     {
         printf("entre");
         agregar_cancion(playlist, titulo, artista, duracion, ruta_imagen, ruta_audio, ruta_video, insertar);
-        mostrarPlaylist(playlist);
+        mostrarPlaylist(*playlist);
         return 1; // Éxito
     }
 
