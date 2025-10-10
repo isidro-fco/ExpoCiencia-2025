@@ -4,9 +4,11 @@ int main()
 {
     // VARIABLES
     bool pantalla_desarrollador_activa = false;
-    bool multimedia = true;
+    bool multimedia = false;
 
     // AQUI EMPIEZA EL CODIGO
+    CancionPTR playlist = crear_cancion();
+
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
     InitWindow(ANCHO_PANTALLA, ALTO_PANTALLA, "Pantalla Completa");
 
@@ -21,13 +23,7 @@ int main()
     SetTextureFilter(fuente1.texture, TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(fuente2.texture, TEXTURE_FILTER_BILINEAR);
 
-    char titulo[65];
-    char artista[45];
-    char duracion[8];
-    char imagen[255];
-    char audio[255];
-    char video[255];
-    int insertar;
+    
     while (!WindowShouldClose())
     {
         BeginDrawing();
@@ -44,21 +40,27 @@ int main()
 
         secciones_visuales_encabezados();
 
-        if (multimedia)
+        if (!multimedia)
         {
             secciones_visuales_video();
-            DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA*0.68)/3)+0.1, 300, (ANCHO_PANTALLA*0.68)/3, 50}, REDONDEZ,SEGMENTOS, color_fondo);
+            DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.68) / 3), ALTO_PANTALLA * 0.17, (ANCHO_PANTALLA * 0.68) / 3, 50}, REDONDEZ + 0.4, SEGMENTOS, color_verde);
+            DrawRectangleRounded((Rectangle){(((ANCHO_PANTALLA * 0.68) / 3) + ((ANCHO_PANTALLA * 0.68) / 6) - 5), (ALTO_PANTALLA * 0.17) + 5, (ANCHO_PANTALLA * 0.68) / 6, 40}, REDONDEZ + 0.4, SEGMENTOS, color_blanco);
+            DrawTextEx(fuente2, "VIDEO", (Vector2){720, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
+            DrawTextEx(fuente2, "AUDIO", (Vector2){520, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_blanco);
         }
         else
         {
             secciones_visuales_musica();
+            DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4), ALTO_PANTALLA * 0.17, (ANCHO_PANTALLA * 0.68) / 3, 50}, REDONDEZ + 0.4, SEGMENTOS, color_verde);
+            DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4) + 5, (ALTO_PANTALLA * 0.17) + 5, ((ANCHO_PANTALLA * 0.68) / 6), 40}, REDONDEZ + 0.4, SEGMENTOS, color_blanco);
+            DrawTextEx(fuente2, "VIDEO", (Vector2){720, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
+            DrawTextEx(fuente2, "AUDIO", (Vector2){720, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
         }
-        
-        
-        
+
 
         EndDrawing();
     }
+
 
     CloseWindow();
     return 0;

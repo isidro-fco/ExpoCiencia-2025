@@ -26,8 +26,7 @@ typedef struct _cancion
     struct _cancion *anterior;
 } Cancion;
 
-typedef Cancion *NodoPtr;
-typedef Cancion *Lista;
+typedef Cancion *CancionPTR;
 
 typedef struct
 {
@@ -69,7 +68,7 @@ typedef struct
     float duracion;
     float tiempo_actual;
     char ruta[255];
-    void *reproducir_video;  
+    void *reproducir_video;
 } Estado_Video;
 //**************************************************************************************************************************
 //  CONSTANTES
@@ -80,7 +79,13 @@ typedef struct
 //  PORTOTIPOS
 //**************************************************************************************************************************
 int validar_duracion(const char *duracion);
+CancionPTR crear_cancion();
+int agregar_cancion(CancionPTR playlist, const char *titulo, const char *artista, const char *duracion, const char *ruta_imagen, const char *ruta_audio, const char *ruta_video, int insertar);
+void insertar_primero(CancionPTR nodo, CancionPTR *lista);
+void insertar_ultimo(CancionPTR nodo, CancionPTR *lista);
 
+void mostrarPlaylist(CancionPTR lista);
+void mostrarCancion(CancionPTR cancion);
 //**************************************************************************************************************************
 //  FUNCIONES DE ESTRUCTURA
 //**************************************************************************************************************************
@@ -103,6 +108,117 @@ int validar_duracion(const char *duracion)
     }
     return 1;
 }
+//**************************************************************************************************************************
+CancionPTR crear_cancion()
+{
+    CancionPTR nueva = (CancionPTR)malloc(sizeof(Cancion));
+
+    nueva->anterior = NULL;
+    nueva->siguiente = NULL;
+
+    strcpy(nueva->artista, "");
+    strcpy(nueva->audio, "");
+    strcpy(nueva->duracion, "");
+    strcpy(nueva->imagen, "");
+    strcpy(nueva->titulo, "");
+    strcpy(nueva->video, "");
+
+    return nueva;
+}
+//******************************************************************************************************
+int agregar_cancion(CancionPTR playlist, const char *titulo, const char *artista, const char *duracion, const char *ruta_imagen, const char *ruta_audio, const char *ruta_video, int insertar)
+{
+    CancionPTR nodo = crear_cancion();
+    if (nodo == NULL)
+    {
+        return 0;
+    }
+
+    
+    strcpy(nodo->titulo, titulo);
+    strcpy(nodo->artista, artista);
+    strcpy(nodo->duracion, duracion);
+    strcpy(nodo->imagen, ruta_imagen);
+    strcpy(nodo->audio, ruta_audio);
+    strcpy(nodo->video, ruta_video);
+
+    nodo->siguiente = NULL;
+    nodo->anterior = NULL;
+
+    switch (insertar)
+    {
+    case 1:
+        insertar_primero(nodo, &playlist);
+        break;
+    case 2:
+        insertar_ultimo(nodo, &playlist);
+        break;
+    }
+
+    return 1;
+}
+//******************************************************************************************************
+void insertar_primero(CancionPTR nodo, CancionPTR *lista)
+{
+    if (nodo == NULL)
+    {
+        return;
+    }
+
+    // insertar cuando esta vacio
+    if (*lista == NULL)
+    {
+        *lista = nodo;
+    }
+    else
+    {
+        // primero
+        (*lista)->anterior = nodo;
+        nodo->siguiente = *lista;
+        *lista = nodo;
+    }
+}
+//******************************************************************************************************
+void insertar_ultimo(CancionPTR nodo, CancionPTR *lista)
+{
+    if (nodo == NULL)
+    {
+        return;
+    }
+
+    // insertar cuando esta vacio
+    if (*lista == NULL)
+    {
+        *lista = nodo;
+    }
+    else
+    {
+        // ultimo
+        CancionPTR aux = *lista;
+        while (aux->siguiente != NULL)
+        {
+            aux = aux->siguiente;
+        }
+
+        aux->siguiente = nodo;
+        nodo->anterior = aux;
+    }
+}
 //******************************************************************************************************
 
-//******************************************************************************************************
+// PRUEBA DE QUE SI SE LLENA LA PLAYLIST
+void mostrarPlaylist(CancionPTR lista)
+{
+    CancionPTR aux = lista;
+    printf("Titulo%15sArtista\n", " ");
+    while (aux != NULL)
+    {
+        mostrarCancion(aux);
+        aux = aux->siguiente;
+    }
+}
+
+void mostrarCancion(CancionPTR cancion)
+{
+    printf("%-20s %-20s\n", cancion->titulo, cancion->artista);
+}

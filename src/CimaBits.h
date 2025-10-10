@@ -45,7 +45,7 @@ void pantalla_desarrollador(Font fuente1, Font fuente2, Font fuente3);
 void secciones_visuales_encabezados();
 void secciones_visuales_musica();
 void secciones_visuales_video();
-int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3, char *titulo, char *artista, char *duracion, char *ruta_imagen, char *ruta_audio, char *ruta_video, int *insertar);
+int formulario(CancionPTR playlist, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3);
 
 //**************************************************************************************************************************
 //  FUNCIONES VISUALES
@@ -129,7 +129,7 @@ void secciones_visuales_video()
     DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.7, ALTO_PANTALLA * 0.712, ANCHO_PANTALLA * 0.29, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
 }
 //**************************************************************************************************************************
-int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3, char *titulo, char *artista, char *duracion, char *ruta_imagen, char *ruta_audio, char *ruta_video, int *insertar)
+int formulario(CancionPTR playlist, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3)
 {
     bool formulario_completado = false;
     bool duracion_valida = false;
@@ -138,6 +138,14 @@ int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3, char *
     bool imagen_cargada = false;
     Texture2D img_portada = {0};
     Sound audio = {0};
+
+    char titulo[65] = {0};
+    char artista[45] = {0};
+    char duracion[8] = {0};
+    char ruta_imagen[255] = {0};
+    char ruta_audio[255] = {0};
+    char ruta_video[255] = {0};
+    int insertar = 0;
 
     // OPCIONES DE MARCA
     bool casilla_al_inicio_seleccionada = false;
@@ -329,9 +337,9 @@ int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3, char *
                 enfocado = 2;
             else if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.05, 650, 400, 60}))
                 enfocado = 3;
-            else if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.525, 400, ANCHO_PANTALLA * 0.425, 60}))
+            else if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.525, 510, ANCHO_PANTALLA * 0.425, 60}))
                 enfocado = 4;
-            else if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.525, 680, ANCHO_PANTALLA * 0.425, 60}))
+            else if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.525, 650, ANCHO_PANTALLA * 0.425, 60}))
                 enfocado = 5;
 
             // Casillas de radio
@@ -339,11 +347,13 @@ int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3, char *
             {
                 casilla_al_inicio_seleccionada = true;
                 casilla_al_final_seleccionada = false;
+                insertar = 1;
             }
             else if (CheckCollisionPointRec(posicion_mouse, casilla_al_final))
             {
                 casilla_al_inicio_seleccionada = false;
                 casilla_al_final_seleccionada = true;
+                insertar = 2;
             }
 
             // Botones
@@ -476,9 +486,9 @@ int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3, char *
     // PROCESAR RESULTADO
     if (formulario_completado)
     {
-        // Ya no asignamos textura y audio cargados, solo usamos las rutas
-        // *insertar_al_inicio = casilla_al_inicio_seleccionada ? 1 : 0;
-
+        printf("entre");
+        agregar_cancion(playlist, titulo, artista, duracion, ruta_imagen, ruta_audio, ruta_video, insertar);
+        mostrarPlaylist(playlist);
         return 1; // Éxito
     }
 
