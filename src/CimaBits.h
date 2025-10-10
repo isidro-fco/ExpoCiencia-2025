@@ -1,10 +1,12 @@
-// CimaBits - ExpoCiencias 2025
-//******************************************************************************************************
-// LIBRERIA
+//  ExpoCiencia y Tecnología 2025
+//  CimaBits
+//**************************************************************************************************************************
+//  LIBRERIA
+//**************************************************************************************************************************
 #include "estructura.h"
-
-//******************************************************************************************************
-// CONSTANTES
+//**************************************************************************************************************************
+//  CONSTANTES
+//**************************************************************************************************************************
 #define ANCHO_FONDO 3840
 #define ALTO_FONDO 2160
 #define TAMANIO_FUENTE 80
@@ -12,18 +14,12 @@
 #define TAMANIO_FUENTE_TER 45
 #define TAMANIO_FUENTE_CUA 40
 #define TAMANIO_FUENTE_QUI 20
-
-//******************************************************************************************************
-// ESTRUCTURAS
-typedef struct
-{
-    Texture2D textura;
-    Rectangle rect;
-    bool activo;
-} Boton_simple;
-
-//******************************************************************************************************
-// VARIABLES GLOBALES
+#define REDONDEZ 0.5
+#define SEGMENTOS 50
+#define CANCIONES_VISIBLES 5
+//**************************************************************************************************************************
+//  VARIABLES GLOBALES
+//**************************************************************************************************************************
 Color color_blanco = {255, 255, 255, 255};
 Color color_fondo = {255, 255, 255, 100};
 Color color_verde = {0, 60, 19, 255};
@@ -39,26 +35,28 @@ Color color_casilla_marcada = {0, 60, 19, 255};
 Color color_error = {204, 0, 0, 255};
 Color color_exito = {0, 128, 0, 255};
 
-float redondez = 0.5f;
-int segmentos = 50;
-
-//******************************************************************************************************
-// PROTOTIPOS
-Vector2 centrar_horizontal(Font font, const char *text, float fontSize, float spacing, float yPosition);
+Estado_Imagen imagen_actual = {0};
+Estado_Audio audio_actual = {0};
+//**************************************************************************************************************************
+//  PROTOTIPOS
+//**************************************************************************************************************************
+Vector2 centrar_texto_horizontal(Font fuente, const char *texto, float tamanio_fuente, float espaciado, float posision_y);
 void pantalla_desarrollador(Font fuente1, Font fuente2, Font fuente3);
-void secciones_visuales();
-int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3,char *titulo, char *artista, char *duracion, char *ruta_imagen, char *ruta_audio, char *ruta_video, int *insertar);
+void secciones_visuales_encabezados();
+void secciones_visuales_musica();
+void secciones_visuales_video();
+int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3, char *titulo, char *artista, char *duracion, char *ruta_imagen, char *ruta_audio, char *ruta_video, int *insertar);
 
-//******************************************************************************************************
-//----------------------------------------- FUNCIONES VISUALES -----------------------------------------
-//******************************************************************************************************
-Vector2 centrar_horizontal(Font font, const char *text, float fontSize, float spacing, float yPosition)
+//**************************************************************************************************************************
+//  FUNCIONES VISUALES
+//**************************************************************************************************************************
+Vector2 centrar_texto_horizontal(Font fuente, const char *texto, float tamanio_fuente, float espaciado, float posision_y)
 {
-    float textWidth = MeasureTextEx(font, text, fontSize, spacing).x;
-    float xPosition = (ANCHO_PANTALLA - textWidth) / 2;
-    return (Vector2){xPosition, yPosition};
+    float ancho_texto = MeasureTextEx(fuente, texto, tamanio_fuente, espaciado).x;
+    float posision_x = (ANCHO_PANTALLA - ancho_texto) / 2;
+    return (Vector2){posision_x, posision_y};
 }
-//******************************************************************************************************
+//**************************************************************************************************************************
 void pantalla_desarrollador(Font fuente1, Font fuente2, Font fuente3)
 {
     // VARIABLES LOCALES
@@ -84,8 +82,8 @@ void pantalla_desarrollador(Font fuente1, Font fuente2, Font fuente3)
         ClearBackground(RAYWHITE);
 
         DrawTextureEx(logo, (Vector2){posX, posY}, 0.0f, escala, WHITE);
-        DrawTextEx(fuente3, "DESARROLLADO PARA:", centrar_horizontal(fuente2, "DESARROLLADO PARA:", TAMANIO_FUENTE_SEC, 1, 720), TAMANIO_FUENTE_SEC, 0, color_verde);
-        DrawTextEx(fuente3, "EXPOCIENCIA 2025", centrar_horizontal(fuente2, "EXPOCIENCIA 2025", TAMANIO_FUENTE, 1, 760), TAMANIO_FUENTE, 0, color_verde_claro);
+        DrawTextEx(fuente3, "DESARROLLADO PARA:", centrar_texto_horizontal(fuente2, "DESARROLLADO PARA:", TAMANIO_FUENTE_SEC, 1, 720), TAMANIO_FUENTE_SEC, 0, color_verde);
+        DrawTextEx(fuente3, "EXPOCIENCIA 2025", centrar_texto_horizontal(fuente2, "EXPOCIENCIA 2025", TAMANIO_FUENTE, 1, 760), TAMANIO_FUENTE, 0, color_verde_claro);
 
         EndDrawing();
     }
@@ -95,25 +93,43 @@ void pantalla_desarrollador(Font fuente1, Font fuente2, Font fuente3)
 
     UnloadTexture(logo);
 }
-//******************************************************************************************************
-void secciones_visuales()
+//**************************************************************************************************************************
+void secciones_visuales_encabezados()
 {
-    DrawRectangleRounded((Rectangle){0, 0, ANCHO_PANTALLA, ALTO_PANTALLA * 0.15}, redondez, segmentos, color_fondo);
-    DrawRectangleRec((Rectangle){0, 0, ANCHO_PANTALLA, ALTO_PANTALLA * 0.04}, color_blanco);
+    DrawTriangle((Vector2){0, 0}, (Vector2){0, 39}, (Vector2){39, 0}, color_blanco);
+    DrawTriangle((Vector2){ANCHO_PANTALLA, 0}, (Vector2){ANCHO_PANTALLA - 39, 0}, (Vector2){ANCHO_PANTALLA, 39}, color_blanco);
+    DrawRectangleRounded((Rectangle){0, 0, ANCHO_PANTALLA, ALTO_PANTALLA * 0.15}, REDONDEZ + 0.1, SEGMENTOS, color_fondo);
+    DrawRectangleRoundedLinesEx((Rectangle){8, 8, ANCHO_PANTALLA - 16, ALTO_PANTALLA * 0.135}, REDONDEZ, SEGMENTOS, 8, color_blanco);
 
-    DrawRectangleRounded((Rectangle){0, ALTO_PANTALLA * 0.85, ANCHO_PANTALLA, ALTO_PANTALLA * 0.15}, redondez, segmentos, color_fondo);
-    DrawRectangleRec((Rectangle){0, ALTO_PANTALLA * 0.96, ANCHO_PANTALLA, ALTO_PANTALLA * 0.04}, color_blanco);
-
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.01, ALTO_PANTALLA * 0.16, ANCHO_PANTALLA * 0.4, ALTO_PANTALLA * 0.68}, redondez - 0.3, segmentos, color_fondo);
-
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.42, ALTO_PANTALLA * 0.16, ANCHO_PANTALLA * 0.57, ALTO_PANTALLA * 0.128}, redondez - 0.3, segmentos, color_fondo);
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.42, ALTO_PANTALLA * 0.298, ANCHO_PANTALLA * 0.57, ALTO_PANTALLA * 0.128}, redondez - 0.3, segmentos, color_fondo);
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.42, ALTO_PANTALLA * 0.438, ANCHO_PANTALLA * 0.57, ALTO_PANTALLA * 0.128}, redondez - 0.3, segmentos, color_fondo);
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.42, ALTO_PANTALLA * 0.574, ANCHO_PANTALLA * 0.57, ALTO_PANTALLA * 0.128}, redondez - 0.3, segmentos, color_fondo);
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.42, ALTO_PANTALLA * 0.712, ANCHO_PANTALLA * 0.57, ALTO_PANTALLA * 0.128}, redondez - 0.3, segmentos, color_fondo);
+    DrawTriangle((Vector2){0, ALTO_PANTALLA}, (Vector2){39, ALTO_PANTALLA}, (Vector2){0, ALTO_PANTALLA - 39}, color_blanco);
+    DrawTriangle((Vector2){ANCHO_PANTALLA, ALTO_PANTALLA}, (Vector2){ANCHO_PANTALLA, ALTO_PANTALLA - 39}, (Vector2){ANCHO_PANTALLA - 39, ALTO_PANTALLA}, color_blanco);
+    DrawRectangleRounded((Rectangle){0, ALTO_PANTALLA * 0.85, ANCHO_PANTALLA, ALTO_PANTALLA * 0.15}, REDONDEZ, SEGMENTOS, color_fondo);
+    DrawRectangleRoundedLinesEx((Rectangle){8, ALTO_PANTALLA * 0.85 + 8, ANCHO_PANTALLA - 16, ALTO_PANTALLA * 0.135}, REDONDEZ, SEGMENTOS, 8, color_blanco);
 }
-//******************************************************************************************************
-int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3,char *titulo, char *artista, char *duracion, char *ruta_imagen, char *ruta_audio, char *ruta_video, int *insertar)
+//**************************************************************************************************************************
+void secciones_visuales_musica()
+{
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.01, ALTO_PANTALLA * 0.16, ANCHO_PANTALLA * 0.4, ALTO_PANTALLA * 0.68}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
+
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.42, ALTO_PANTALLA * 0.16, ANCHO_PANTALLA * 0.57, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.42, ALTO_PANTALLA * 0.298, ANCHO_PANTALLA * 0.57, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.42, ALTO_PANTALLA * 0.438, ANCHO_PANTALLA * 0.57, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.42, ALTO_PANTALLA * 0.574, ANCHO_PANTALLA * 0.57, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.42, ALTO_PANTALLA * 0.712, ANCHO_PANTALLA * 0.57, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
+}
+//**************************************************************************************************************************
+void secciones_visuales_video()
+{
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.01, ALTO_PANTALLA * 0.16, ANCHO_PANTALLA * 0.68, ALTO_PANTALLA * 0.68}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
+
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.7, ALTO_PANTALLA * 0.16, ANCHO_PANTALLA * 0.29, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.7, ALTO_PANTALLA * 0.298, ANCHO_PANTALLA * 0.29, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.7, ALTO_PANTALLA * 0.438, ANCHO_PANTALLA * 0.29, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.7, ALTO_PANTALLA * 0.574, ANCHO_PANTALLA * 0.29, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.7, ALTO_PANTALLA * 0.712, ANCHO_PANTALLA * 0.29, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
+}
+//**************************************************************************************************************************
+int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3, char *titulo, char *artista, char *duracion, char *ruta_imagen, char *ruta_audio, char *ruta_video, int *insertar)
 {
     bool formulario_completado = false;
     bool duracion_valida = false;
@@ -126,12 +142,12 @@ int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3,char *t
     // OPCIONES DE MARCA
     bool casilla_al_inicio_seleccionada = false;
     bool casilla_al_final_seleccionada = false;
-    Rectangle casilla_al_inico = {ANCHO_PANTALLA * 0.05, 625, 25, 25};
-    Rectangle casilla_al_final = {ANCHO_PANTALLA * 0.05, 655, 25, 25};
+    Rectangle casilla_al_inico = {ANCHO_PANTALLA * 0.05, 765, 25, 25};
+    Rectangle casilla_al_final = {ANCHO_PANTALLA * 0.05, 795, 25, 25};
 
     // BOTONES
-    Rectangle boton_aceptar = {550, ALTO_PANTALLA * 0.85, 200, 60};
-    Rectangle boton_cancelar = {850, ALTO_PANTALLA * 0.85, 200, 60};
+    Rectangle boton_aceptar = {700, ALTO_PANTALLA * 0.85, 200, 60};
+    Rectangle boton_cancelar = {1000, ALTO_PANTALLA * 0.85, 200, 60};
 
     while (!WindowShouldClose() && !formulario_completado)
     {
@@ -154,12 +170,12 @@ int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3,char *t
             case 2:
                 current_buffer = ruta_audio;
                 max_length = 255;
-                
+
                 break;
             case 3:
                 current_buffer = duracion;
                 max_length = 7;
-                
+
                 break;
             case 4:
                 current_buffer = ruta_imagen;
@@ -366,24 +382,24 @@ int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3,char *t
 
         // [CÓDIGO DE DIBUJO DE LA INTERFAZ COMPLETO]
         // TÍTULO DEL FORMULARIO
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.15, 80, ANCHO_PANTALLA * 0.7, 80}, redondez, segmentos, color_fondo);
-        DrawTextEx(fuente1, "AGREGAR NUEVA CANCION", centrar_horizontal(fuente1, "AGREGAR NUEVA CANCION", TAMANIO_FUENTE, 1, 80), TAMANIO_FUENTE, 1, color_verde);
+        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.15, 80, ANCHO_PANTALLA * 0.7, 80}, REDONDEZ, SEGMENTOS, color_fondo);
+        DrawTextEx(fuente1, "AGREGAR NUEVA CANCION", centrar_texto_horizontal(fuente1, "AGREGAR NUEVA CANCION", TAMANIO_FUENTE, 1, 80), TAMANIO_FUENTE, 1, color_verde);
 
         // ETIQUETAS ARRIBA DE LOS CAMPOS
         DrawTextEx(fuente2, "TITULO DE LA CANCION:", (Vector2){ANCHO_PANTALLA * 0.05, 250}, TAMANIO_FUENTE_TER, 0, color_verde);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 290, ANCHO_PANTALLA * 0.425, 60}, redondez, segmentos, enfocado == 0 ? color_campo_activo : color_campo_inactivo);
+        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 290, ANCHO_PANTALLA * 0.425, 60}, REDONDEZ, SEGMENTOS, enfocado == 0 ? color_campo_activo : color_campo_inactivo);
         DrawTextEx(fuente3, titulo, (Vector2){ANCHO_PANTALLA * 0.06, 300}, TAMANIO_FUENTE_CUA, 0, enfocado == 0 ? color_texto_activo : color_texto_inactivo);
 
         DrawTextEx(fuente2, "NOMBRE DEL ARTISTA:", (Vector2){ANCHO_PANTALLA * 0.05, 360}, TAMANIO_FUENTE_TER, 0, color_verde);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 400, ANCHO_PANTALLA * 0.425, 60}, redondez, segmentos, enfocado == 1 ? color_campo_activo : color_campo_inactivo);
+        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 400, ANCHO_PANTALLA * 0.425, 60}, REDONDEZ, SEGMENTOS, enfocado == 1 ? color_campo_activo : color_campo_inactivo);
         DrawTextEx(fuente3, artista, (Vector2){ANCHO_PANTALLA * 0.06, 410}, TAMANIO_FUENTE_CUA, 0, enfocado == 1 ? color_texto_activo : color_texto_inactivo);
 
         // CAMPO PARA AUDIO
         DrawTextEx(fuente2, "AUDIO:", (Vector2){ANCHO_PANTALLA * 0.05, 470}, TAMANIO_FUENTE_TER, 0, color_verde);
         DrawTextEx(fuente2, "(RUTA DEL ARCHIVO)", (Vector2){ANCHO_PANTALLA * 0.1, 488}, TAMANIO_FUENTE_QUI, 0, color_verde);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 510, ANCHO_PANTALLA * 0.425, 60}, redondez, segmentos, enfocado == 2 ? color_campo_activo : color_campo_inactivo);
+        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 510, ANCHO_PANTALLA * 0.425, 60}, REDONDEZ, SEGMENTOS, enfocado == 2 ? color_campo_activo : color_campo_inactivo);
         DrawTextEx(fuente3, ruta_audio, (Vector2){ANCHO_PANTALLA * 0.06, 520}, TAMANIO_FUENTE_CUA, 0, enfocado == 2 ? color_texto_activo : color_texto_inactivo);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 580, 110, 25}, redondez, segmentos, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 615, 110, 25}) ? color_boton_pulsado : color_boton);
+        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 580, 110, 25}, REDONDEZ, SEGMENTOS, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 615, 110, 25}) ? color_boton_pulsado : color_boton);
         DrawTextEx(fuente2, "CARGAR AUDIO", (Vector2){ANCHO_PANTALLA * 0.06, 585}, TAMANIO_FUENTE_QUI, 0, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 615, 110, 25}) ? color_texto_activo : color_texto_inactivo);
 
         // Indicador de audio cargado
@@ -396,7 +412,7 @@ int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3,char *t
         Color color_duracion = enfocado == 2 ? color_campo_activo : color_campo_inactivo;
 
         DrawTextEx(fuente2, "DURACION [MM:SS]:", (Vector2){ANCHO_PANTALLA * 0.05, 610}, TAMANIO_FUENTE_TER, 0, color_verde);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 650, 400, 60}, redondez, segmentos, enfocado == 3 ? color_campo_activo : color_campo_inactivo);
+        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 650, 400, 60}, REDONDEZ, SEGMENTOS, enfocado == 3 ? color_campo_activo : color_campo_inactivo);
         DrawTextEx(fuente3, duracion, (Vector2){ANCHO_PANTALLA * 0.06, 660}, TAMANIO_FUENTE_CUA, 0, enfocado == 3 ? color_texto_activo : color_texto_inactivo);
 
         if (strlen(duracion) > 0 && !duracion_valida)
@@ -407,54 +423,52 @@ int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3,char *t
         // MENSAJE DE ERROR SI LA DURACIÓN NO ES VÁLIDA
         if (strlen(duracion) > 0 && !duracion_valida)
         {
-            DrawTextEx(fuente3, "FORMATO INVALIDO. \nUSE MM:SS", (Vector2){520, 620}, TAMANIO_FUENTE_QUI, 0, color_error);
+            DrawTextEx(fuente3, "FORMATO INVALIDO. \nUSE MM:SS", (Vector2){520, 660}, TAMANIO_FUENTE_QUI, 0, color_error);
         }
 
         // CASILLAS DE MARCA (RADIO BUTTONS)
-        DrawTextEx(fuente2, "SELECCIONE UNA OPCION:", (Vector2){ANCHO_PANTALLA * 0.05, 780}, TAMANIO_FUENTE_TER, 0, color_verde);
-        DrawRectangleRounded(casilla_al_inico, redondez, segmentos, casilla_al_inicio_seleccionada ? color_casilla_marcada : color_campo_inactivo);
-        DrawTextEx(fuente2, "INSERTAR AL INICIO", (Vector2){ANCHO_PANTALLA * 0.07, 720}, TAMANIO_FUENTE_CUA, 0, color_verde);
-        DrawRectangleRounded(casilla_al_final, redondez, segmentos, casilla_al_final_seleccionada ? color_casilla_marcada : color_campo_inactivo);
-        DrawTextEx(fuente2, "INSERTAR AL FINAL", (Vector2){ANCHO_PANTALLA * 0.07, 750}, TAMANIO_FUENTE_CUA, 0, color_verde);
+        DrawTextEx(fuente2, "SELECCIONE UNA OPCION:", (Vector2){ANCHO_PANTALLA * 0.05, 720}, TAMANIO_FUENTE_TER, 0, color_verde);
+        DrawRectangleRounded(casilla_al_inico, REDONDEZ, SEGMENTOS, casilla_al_inicio_seleccionada ? color_casilla_marcada : color_campo_inactivo);
+        DrawTextEx(fuente2, "INSERTAR AL INICIO", (Vector2){ANCHO_PANTALLA * 0.07, 760}, TAMANIO_FUENTE_CUA, 0, color_verde);
+        DrawRectangleRounded(casilla_al_final, REDONDEZ, SEGMENTOS, casilla_al_final_seleccionada ? color_casilla_marcada : color_campo_inactivo);
+        DrawTextEx(fuente2, "INSERTAR AL FINAL", (Vector2){ANCHO_PANTALLA * 0.07, 790}, TAMANIO_FUENTE_CUA, 0, color_verde);
 
         // IMAGEN
-        DrawTextEx(fuente2, "IMAGEN:", (Vector2){ANCHO_PANTALLA * 0.525, 360}, TAMANIO_FUENTE_TER, 0, color_verde);
-        DrawTextEx(fuente2, "[ RUTA DEL ARCHIVO ]", (Vector2){ANCHO_PANTALLA * 0.575, 378}, TAMANIO_FUENTE_QUI, 0, color_verde);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 400, ANCHO_PANTALLA * 0.425, 60}, redondez, segmentos, enfocado == 4 ? color_campo_activo : color_campo_inactivo);
-        DrawTextEx(fuente3, ruta_imagen, (Vector2){ANCHO_PANTALLA * 0.535, 410}, TAMANIO_FUENTE_CUA, 0, enfocado == 4 ? color_texto_activo : color_texto_inactivo);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 470, 120, 25}, redondez, segmentos, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 480, 120, 25}) ? color_boton_pulsado : color_boton);
-        DrawTextEx(fuente2, "CARGAR IMAGEN", (Vector2){ANCHO_PANTALLA * 0.535, 475}, TAMANIO_FUENTE_QUI, 0, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 480, 120, 25}) ? color_texto_activo : color_texto_inactivo);
+        DrawTextEx(fuente2, "IMAGEN:", (Vector2){ANCHO_PANTALLA * 0.525, 470}, TAMANIO_FUENTE_TER, 0, color_verde);
+        DrawTextEx(fuente2, "[ RUTA DEL ARCHIVO ]", (Vector2){ANCHO_PANTALLA * 0.575, 488}, TAMANIO_FUENTE_QUI, 0, color_verde);
+        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 510, ANCHO_PANTALLA * 0.425, 60}, REDONDEZ, SEGMENTOS, enfocado == 4 ? color_campo_activo : color_campo_inactivo);
+        DrawTextEx(fuente3, ruta_imagen, (Vector2){ANCHO_PANTALLA * 0.535, 520}, TAMANIO_FUENTE_CUA, 0, enfocado == 4 ? color_texto_activo : color_texto_inactivo);
+        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 580, 120, 25}, REDONDEZ, SEGMENTOS, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 480, 120, 25}) ? color_boton_pulsado : color_boton);
+        DrawTextEx(fuente2, "CARGAR IMAGEN", (Vector2){ANCHO_PANTALLA * 0.535, 585}, TAMANIO_FUENTE_QUI, 0, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 480, 120, 25}) ? color_texto_activo : color_texto_inactivo);
 
-        DrawRectangle(ANCHO_PANTALLA * 0.845, 170, 200, 200, CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.76481, 170, 200, 200}) ? color_boton_pulsado : color_boton);
+        DrawRectangle(ANCHO_PANTALLA * 0.795, 170, 300, 300, CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.76481, 170, 200, 200}) ? color_boton_pulsado : color_boton);
 
         SetTextureFilter(img_portada, TEXTURE_FILTER_BILINEAR);
         // Mostrar imagen cargada con tamaño 200x200
         if (imagen_cargada)
         {
-            Rectangle dest = {1200, 170, 200, 200};
+            Rectangle dest = {ANCHO_PANTALLA * 0.795, 170, 300, 300};
             Rectangle source = {0, 0, img_portada.width, img_portada.height};
             DrawTexturePro(img_portada, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
         }
 
         // CAMPO PARA VIDEO
-        DrawTextEx(fuente2, "VIDEO:", (Vector2){ANCHO_PANTALLA * 0.525, 640}, TAMANIO_FUENTE_TER, 0, color_verde);
-        DrawTextEx(fuente2, "(RUTA DEL ARCHIVO)", (Vector2){ANCHO_PANTALLA * 0.565, 658}, TAMANIO_FUENTE_QUI, 0, color_verde);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 680, ANCHO_PANTALLA * 0.425, 60}, redondez, segmentos, enfocado == 5 ? color_campo_activo : color_campo_inactivo);
-        DrawTextEx(fuente3, ruta_video, (Vector2){ANCHO_PANTALLA * 0.535, 690}, TAMANIO_FUENTE_CUA, 0, enfocado == 5 ? color_texto_activo : color_texto_inactivo);
-
-        // Botón para cargar audio
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 750, 110, 25}, redondez, segmentos, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 615, 110, 25}) ? color_boton_pulsado : color_boton);
-        DrawTextEx(fuente2, "CARGAR VIDEO", (Vector2){ANCHO_PANTALLA * 0.535, 755}, TAMANIO_FUENTE_QUI, 0, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 615, 110, 25}) ? color_texto_activo : color_texto_inactivo);
+        DrawTextEx(fuente2, "VIDEO:", (Vector2){ANCHO_PANTALLA * 0.525, 610}, TAMANIO_FUENTE_TER, 0, color_verde);
+        DrawTextEx(fuente2, "(RUTA DEL ARCHIVO)", (Vector2){ANCHO_PANTALLA * 0.565, 628}, TAMANIO_FUENTE_QUI, 0, color_verde);
+        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 650, ANCHO_PANTALLA * 0.425, 60}, REDONDEZ, SEGMENTOS, enfocado == 5 ? color_campo_activo : color_campo_inactivo);
+        DrawTextEx(fuente3, ruta_video, (Vector2){ANCHO_PANTALLA * 0.535, 660}, TAMANIO_FUENTE_CUA, 0, enfocado == 5 ? color_texto_activo : color_texto_inactivo);
+        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 720, 110, 25}, REDONDEZ, SEGMENTOS, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 615, 110, 25}) ? color_boton_pulsado : color_boton);
+        DrawTextEx(fuente2, "CARGAR VIDEO", (Vector2){ANCHO_PANTALLA * 0.535, 725}, TAMANIO_FUENTE_QUI, 0, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 615, 110, 25}) ? color_texto_activo : color_texto_inactivo);
 
         // BOTONES ACEPTAR Y CANCELAR
-        DrawRectangleRounded(boton_aceptar, redondez, segmentos, CheckCollisionPointRec(posicion_mouse, boton_aceptar) ? color_boton_pulsado : color_boton);
-        DrawTextEx(fuente2, "ACEPTAR", (Vector2){boton_aceptar.x + 35, boton_aceptar.y + 15}, TAMANIO_FUENTE_TER, 0, CheckCollisionPointRec(posicion_mouse, boton_aceptar) ? color_texto_activo : color_texto_inactivo);
+        DrawRectangleRounded(boton_aceptar, REDONDEZ, SEGMENTOS, CheckCollisionPointRec(posicion_mouse, boton_aceptar) ? color_boton_pulsado : color_boton);
+        DrawTextEx(fuente2, "ACEPTAR", (Vector2){boton_aceptar.x + 45, boton_aceptar.y + 10}, TAMANIO_FUENTE_TER, 0, CheckCollisionPointRec(posicion_mouse, boton_aceptar) ? color_texto_activo : color_texto_inactivo);
 
-        DrawRectangleRounded(boton_cancelar, redondez, segmentos, CheckCollisionPointRec(posicion_mouse, boton_cancelar) ? color_boton_pulsado : color_boton);
-        DrawTextEx(fuente2, "CANCELAR", (Vector2){boton_cancelar.x + 30, boton_cancelar.y + 15}, TAMANIO_FUENTE_TER, 0, CheckCollisionPointRec(posicion_mouse, boton_cancelar) ? color_texto_activo : color_texto_inactivo);
+        DrawRectangleRounded(boton_cancelar, REDONDEZ, SEGMENTOS, CheckCollisionPointRec(posicion_mouse, boton_cancelar) ? color_boton_pulsado : color_boton);
+        DrawTextEx(fuente2, "CANCELAR", (Vector2){boton_cancelar.x + 40, boton_cancelar.y + 10}, TAMANIO_FUENTE_TER, 0, CheckCollisionPointRec(posicion_mouse, boton_cancelar) ? color_texto_activo : color_texto_inactivo);
 
         // Mensaje de instrucción para arrastrar archivos
-        DrawTextEx(fuente3, "Arrastra archivos de audio o imagen aqui", (Vector2){ANCHO_PANTALLA * 0.05, 700}, TAMANIO_FUENTE_CUA, 0, color_verde);
+        DrawTextEx(fuente3, "ARRASTRA ARCHIVOS DEL AUDIO, IMAGEN Y VIDEO AQUI", centrar_texto_horizontal(fuente3, "ARRASTRA ARCHIVOS DEL AUDIO, IMAGEN Y VIDEO AQUI", TAMANIO_FUENTE_CUA, 1, 830), TAMANIO_FUENTE_CUA, 1, color_verde);
 
         EndDrawing();
     }
@@ -474,4 +488,168 @@ int formulario(Texture2D fondo, Font fuente1, Font fuente2, Font fuente3,char *t
     if (audio_cargado)
         UnloadSound(audio);
 }
-//******************************************************************************************************
+//**************************************************************************************************************************
+void dibujar_tabla_canciones(Font fuente1, Font fuente2, Cancion *playlist, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo)
+{
+    const int tabla_x = 550;
+    const int tabla_y = 150;
+    const int altura_fila = 122;
+    const int ancho_columna = 1050;
+
+    static Cancion *ultima_cancion_seleccionada = NULL;
+
+    if (playlist == NULL)
+    {
+        DrawTextEx(fuente2, "No hay canciones para mostrar", (Vector2){550, 200}, TAMANIO_FUENTE_TER, 0, RED);
+        return;
+    }
+
+    // Obtener el puntero al primer nodo visible
+    Cancion *actual = playlist;
+    for (int i = 0; i < posision_scroll.inicio; i++)
+    {
+        if (actual == NULL)
+            break;
+        actual = actual->siguiente;
+    }
+
+    // Dibujar filas de canciones visibles con desplazamiento suave
+    for (int i = 0; i < CANCIONES_VISIBLES; i++)
+    {
+        if (actual == NULL)
+            break;
+
+        int indice = posision_scroll.inicio + i;
+        int y = tabla_y + i * altura_fila;
+
+        // Solo dibujar si está dentro del área visible
+        if (y < tabla_y - altura_fila || y > tabla_y + (CANCIONES_VISIBLES * altura_fila))
+        {
+            actual = actual->siguiente;
+            continue;
+        }
+
+        // Resaltar la canción seleccionada
+        if (indice == cancion_seleccionada)
+        {
+            DrawRectangleRounded((Rectangle){tabla_x, y, ancho_columna - 6, altura_fila - 6}, REDONDEZ, SEGMENTOS, color_verde);
+            ultima_cancion_seleccionada = actual; // Guardar la canción seleccionada
+        }
+        else
+        {
+            DrawRectangleRounded((Rectangle){tabla_x, y, ancho_columna - 6, altura_fila - 6}, REDONDEZ, SEGMENTOS, color_fondo);
+        }
+
+        // Dibujar texto del nodo actual
+        if (indice == cancion_seleccionada)
+        {
+            DrawTextEx(fuente2, actual->titulo, (Vector2){tabla_x + 35, y + 30}, TAMANIO_FUENTE_TER, 0, WHITE);
+            DrawTextEx(fuente2, actual->artista, (Vector2){tabla_x + 35, y + 60}, TAMANIO_FUENTE_TER, 0, WHITE);
+            DrawTextEx(fuente2, actual->duracion, (Vector2){tabla_x + 980, y + 45}, TAMANIO_FUENTE_TER, 0, WHITE);
+        }
+        else
+        {
+            DrawTextEx(fuente2, actual->titulo, (Vector2){tabla_x + 35, y + 30}, TAMANIO_FUENTE_TER, 0, color_verde);
+            DrawTextEx(fuente2, actual->artista, (Vector2){tabla_x + 35, y + 60}, TAMANIO_FUENTE_TER, 0, color_verde);
+            DrawTextEx(fuente2, actual->duracion, (Vector2){tabla_x + 980, y + 45}, TAMANIO_FUENTE_TER, 0, color_verde);
+        }
+
+        // Avanzar al siguiente nodo de la lista
+        if (actual->siguiente != NULL && actual->siguiente != playlist)
+        {
+            actual = actual->siguiente;
+        }
+        else
+        {
+            // Si es el último nodo de una lista no circular, salir del loop
+            break;
+        }
+    }
+
+    // Manejo de la canción seleccionada (textura y audio)
+    if (ultima_cancion_seleccionada != NULL)
+    {
+        // Cargar textura solo si es diferente a la actual
+        if (strcmp(ultima_cancion_seleccionada->imagen, imagen_actual.ruta) != 0)
+        {
+            if (imagen_actual.cargada)
+            {
+                UnloadTexture(imagen_actual.imagen);
+            }
+            imagen_actual.imagen = LoadTexture(ultima_cancion_seleccionada->imagen);
+            imagen_actual.cargada = true;
+            strcpy(imagen_actual.ruta, ultima_cancion_seleccionada->imagen);
+            SetTextureFilter(imagen_actual.imagen, TEXTURE_FILTER_BILINEAR);
+        }
+        // Dibujar la textura de la portada
+        if (imagen_actual.cargada)
+        {
+            DrawTexturePro(imagen_actual.imagen, (Rectangle){0, 0, imagen_actual.imagen.width, imagen_actual.imagen.height}, (Rectangle){145, 160, 250, 250}, (Vector2){0, 0}, 0, WHITE);
+        }
+        // Manejo de audio
+        if (strcmp(ultima_cancion_seleccionada->audio, audio_actual.ruta) != 0)
+        {
+            if (audio_actual.cargada)
+            {
+                StopMusicStream(audio_actual.musica);
+                UnloadMusicStream(audio_actual.musica);
+            }
+            audio_actual.musica = LoadMusicStream(ultima_cancion_seleccionada->audio);
+            audio_actual.cargada = true;
+            strcpy(audio_actual.ruta, ultima_cancion_seleccionada->audio);
+            audio_actual.duracion = GetMusicTimeLength(audio_actual.musica);
+            audio_actual.tiempo_actual = 0;
+        }
+
+        // Dibujar información de la canción seleccionada
+        DrawTextEx(fuente1, "NOMBRE DE LA CANCION:", (Vector2){60, 440}, TAMANIO_FUENTE_QUI, 0, color_verde);
+        DrawTextEx(fuente2, ultima_cancion_seleccionada->titulo, (Vector2){60, 470}, TAMANIO_FUENTE_SEC, 0, color_verde);
+        DrawTextEx(fuente1, "NOMBRE DEL ARTISTA:", (Vector2){60, 520}, TAMANIO_FUENTE_QUI, 0, color_verde);
+        DrawTextEx(fuente2, ultima_cancion_seleccionada->artista, (Vector2){60, 550}, TAMANIO_FUENTE_SEC, 0, color_verde);
+        DrawTextEx(fuente1, "DURACION", (Vector2){60, 600}, TAMANIO_FUENTE_QUI, 0, color_verde);
+        DrawTextEx(fuente2, ultima_cancion_seleccionada->duracion, (Vector2){60, 630}, TAMANIO_FUENTE_SEC, 0, color_verde);
+    }
+}
+//**************************************************************************************************************************
+void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproduciendo)
+{
+    if (!audio->cargada)
+        return;
+
+    const int barra_x = 550;
+    const int barra_y = ALTO_PANTALLA * 0.85 + 50;
+    const int barra_width = 800;
+    const int barra_height = 35;
+
+    // Actualizar tiempo actual si está reproduciendo
+    if (esta_reproduciendo)
+    {
+        audio->tiempo_actual = GetMusicTimePlayed(audio->musica);
+        if (audio->tiempo_actual >= audio->duracion)
+        {
+            // Canción terminada, pasar a la siguiente
+            audio->tiempo_actual = 0;
+        }
+    }
+
+    // Dibujar barra de progreso
+    DrawRectangleRounded((Rectangle){barra_x, barra_y, barra_width, barra_height}, REDONDEZ + 0.3, SEGMENTOS, color_amarillo);
+    float progreso = (audio->duracion > 0) ? (audio->tiempo_actual / audio->duracion) : 0;
+    DrawRectangleRounded((Rectangle){barra_x, barra_y, barra_width * progreso, barra_height}, REDONDEZ + 0.3, SEGMENTOS + 90, color_verde);
+
+    // Dibujar tiempos
+    char tiempo_actual_str[10];
+    char duracion_str[10];
+
+    int minutos_actual = (int)audio->tiempo_actual / 60;
+    int segundos_actual = (int)audio->tiempo_actual % 60;
+    int minutos_total = (int)audio->duracion / 60;
+    int segundos_total = (int)audio->duracion % 60;
+
+    sprintf(tiempo_actual_str, "%d:%02d", minutos_actual, segundos_actual);
+    sprintf(duracion_str, "%d:%02d", minutos_total, segundos_total);
+
+    DrawTextEx(fuente, tiempo_actual_str, (Vector2){barra_x - 50, barra_y}, TAMANIO_FUENTE_CUA, 0, color_verde);
+    DrawTextEx(fuente, duracion_str, (Vector2){barra_x + barra_width + 10, barra_y}, TAMANIO_FUENTE_CUA, 0, color_verde);
+}
+//**************************************************************************************************************************
