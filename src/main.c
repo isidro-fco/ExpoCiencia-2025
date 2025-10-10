@@ -38,26 +38,24 @@ int main()
         float escala = fmaxf((float)ANCHO_PANTALLA / ANCHO_FONDO, (float)ALTO_PANTALLA / ALTO_FONDO);
         DrawTexturePro(fondo, (Rectangle){0, 0, ANCHO_FONDO, ALTO_FONDO}, (Rectangle){(ANCHO_PANTALLA - ANCHO_FONDO * escala) * 0.5f, (ALTO_PANTALLA - ALTO_FONDO * escala) * 0.5f, ANCHO_FONDO * escala, ALTO_FONDO * escala}, (Vector2){0, 0}, 0.0f, WHITE);
 
-        /*secciones_visuales_encabezados();
+        secciones_visuales_encabezados();
 
         if (!multimedia)
         {
             secciones_visuales_video();
-            DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.68) / 3), ALTO_PANTALLA * 0.17, (ANCHO_PANTALLA * 0.68) / 3, 50}, REDONDEZ + 0.4, SEGMENTOS, color_verde);
-            DrawRectangleRounded((Rectangle){(((ANCHO_PANTALLA * 0.68) / 3) + ((ANCHO_PANTALLA * 0.68) / 6) - 5), (ALTO_PANTALLA * 0.17) + 5, (ANCHO_PANTALLA * 0.68) / 6, 40}, REDONDEZ + 0.4, SEGMENTOS, color_blanco);
-            DrawTextEx(fuente2, "VIDEO", (Vector2){720, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
-            DrawTextEx(fuente2, "AUDIO", (Vector2){520, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_blanco);
+            DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4), ALTO_PANTALLA * 0.17, (ANCHO_PANTALLA * 0.68) / 3, 50}, REDONDEZ + 0.4, SEGMENTOS, color_verde);
+            DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4) + 5, (ALTO_PANTALLA * 0.17) + 5, ((ANCHO_PANTALLA * 0.68) / 6), 40}, REDONDEZ + 0.4, SEGMENTOS, color_blanco);
+            DrawTextEx(fuente2, "VIDEO", (Vector2){460, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_blanco);
+            DrawTextEx(fuente2, "AUDIO", (Vector2){260, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
         }
         else
         {
             secciones_visuales_musica();
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4), ALTO_PANTALLA * 0.17, (ANCHO_PANTALLA * 0.68) / 3, 50}, REDONDEZ + 0.4, SEGMENTOS, color_verde);
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4) + 5, (ALTO_PANTALLA * 0.17) + 5, ((ANCHO_PANTALLA * 0.68) / 6), 40}, REDONDEZ + 0.4, SEGMENTOS, color_blanco);
-            DrawTextEx(fuente2, "VIDEO", (Vector2){720, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
-            DrawTextEx(fuente2, "AUDIO", (Vector2){720, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
-        }*/
-
-        formulario(&playlist, fondo, fuente_titulo, fuente1, fuente2);
+            DrawTextEx(fuente2, "VIDEO", (Vector2){460, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_blanco);
+            DrawTextEx(fuente2, "AUDIO", (Vector2){260, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
+        }
 
         EndDrawing();
     }
