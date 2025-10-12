@@ -26,10 +26,10 @@ Color color_verde = {0, 60, 19, 255};
 Color color_verde_claro = {0, 157, 63, 255};
 Color color_amarillo = {220, 238, 178, 255};
 Color color_campo_activo = {0, 60, 19, 255};
-Color color_campo_inactivo = {255, 255, 255, 100};
+Color color_campo_inactivo = {255, 255, 255, 150};
 Color color_texto_activo = {255, 255, 255, 255};
 Color color_texto_inactivo = {0, 60, 19, 255};
-Color color_boton = {255, 255, 255, 100};
+Color color_boton = {255, 255, 255, 150};
 Color color_boton_pulsado = {0, 60, 19, 255};
 Color color_casilla_marcada = {0, 60, 19, 255};
 Color color_error = {204, 0, 0, 255};
@@ -60,7 +60,7 @@ void secciones_visuales_encabezados();
 void secciones_visuales_musica();
 void secciones_visuales_video();
 void configurar_botones();
-int formulario(CancionPTR *playlist, Vector2 posicion_mouse, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3);
+int formulario(CancionPTR *playlist, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3);
 void dibujar_tabla_canciones(Font fuente1, Font fuente2, Cancion *playlist, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo);
 void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproduciendo);
 
@@ -285,13 +285,14 @@ void configurar_botones()
             textura_silenciar.height * escala}};
 }
 //**************************************************************************************************************************
-int formulario(CancionPTR *playlist, Vector2 posicion_mouse, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3)
+int formulario(CancionPTR *playlist, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3)
 {
     bool formulario_completado = false;
     bool duracion_valida = false;
     int enfocado = 0;
     bool audio_cargado = false;
     bool imagen_cargada = false;
+    bool video_cargado = false;
     Texture2D img_portada = {0};
     Sound audio = {0};
 
@@ -304,13 +305,13 @@ int formulario(CancionPTR *playlist, Vector2 posicion_mouse, Texture2D fondo, Fo
     int insertar = 0;
 
     // OPCIONES DE MARCA
-    bool casilla_al_inicio_seleccionada = false;
-    bool casilla_al_final_seleccionada = false;
+    static bool casilla_al_inicio_seleccionada = false;
+    static bool casilla_al_final_seleccionada = false;
     Rectangle casilla_al_inico = {ANCHO_PANTALLA * 0.05, 765, 25, 25};
     Rectangle casilla_al_final = {ANCHO_PANTALLA * 0.05, 795, 25, 25};
 
     // BOTONES
-    
+
     Rectangle boton_aceptar = {700, ALTO_PANTALLA * 0.85, 200, 60};
     Rectangle boton_cancelar = {1000, ALTO_PANTALLA * 0.85, 200, 60};
 
@@ -389,262 +390,319 @@ int formulario(CancionPTR *playlist, Vector2 posicion_mouse, Texture2D fondo, Fo
             enfocado = (enfocado + 1) % 6;
         }
 
-        // MANEJAR ENTER PARA CARGAR IMAGEN
-        if ((IsKeyPressed(KEY_ENTER) || (CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 480, 120, 25}) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) && enfocado == 3 && strlen(ruta_imagen) > 0)
-        {
-            if (imagen_cargada)
-                UnloadTexture(img_portada);
+        Vector2 posicion_mouse = GetMousePosition();
 
-            img_portada = LoadTexture(ruta_imagen);
-            if (img_portada.id > 0)
+        // MANEJAR ENTER PARA CARGAR IMAGEN
+        if ((IsKeyPressed(KEY_ENTER) && enfocado == 4) || (CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 480, 120, 25}) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)))
+        {
+            if (strlen(ruta_imagen) > 0)
             {
-                imagen_cargada = true;
-            }
-            else
-            {
-                imagen_cargada = false;
-                printf("Error cargando textura: %s\n", ruta_imagen);
+                if (imagen_cargada)
+                    UnloadTexture(img_portada);
+
+                img_portada = LoadTexture(ruta_imagen);
+                if (img_portada.id > 0)
+                {
+                    imagen_cargada = true;
+                }
+                else
+                {
+                    imagen_cargada = false;
+                }
             }
         }
 
         // MANEJAR ENTER PARA CARGAR AUDIO
-        if ((IsKeyPressed(KEY_ENTER) || (CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 615, 110, 25}) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) && enfocado == 4 && strlen(ruta_audio) > 0)
+        if ((IsKeyPressed(KEY_ENTER) && enfocado == 2) || (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.05, 580, 110, 25}) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)))
         {
-            if (audio_cargado)
-                UnloadSound(audio);
-
-            audio = LoadSound(ruta_audio);
-            if (audio.frameCount > 0)
+            if (strlen(ruta_audio) > 0)
             {
-                audio_cargado = true;
+                if (audio_cargado)
+                    UnloadSound(audio);
+
+                audio = LoadSound(ruta_audio);
+                if (audio.frameCount > 0)
+                {
+                    audio_cargado = true;
+                    // Intenta obtener la duración si se carga con el botón
+                    float duracion_segundos = (float)audio.frameCount / (float)audio.stream.sampleRate;
+                    int minutos = (int)(duracion_segundos / 60);
+                    int segundos = (int)fmod(duracion_segundos, 60);
+                    snprintf(duracion, 8, "%02d:%02d", minutos, segundos);
+                    duracion_valida = true;
+                }
+                else
+                {
+                    audio_cargado = false;
+                    printf("Error cargando audio: %s\n", ruta_audio);
+                }
+            }
+        }
+
+        // MANEJAR ENTER O CLIC PARA CARGAR VIDEO (enfocado == 5)
+        if ((IsKeyPressed(KEY_ENTER) && enfocado == 5) ||
+            (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.525, 720, 110, 25}) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)))
+        {
+            if (strlen(ruta_video) > 0)
+            {
+                video_cargado = true;
             }
             else
             {
-                audio_cargado = false;
-                printf("Error cargando audio: %s\n", ruta_audio);
+                video_cargado = false;
+                printf("Error cargando video: %s\n", ruta_video);
             }
         }
+    }
 
-        // MANEJAR ARRASTRE Y SOLTADO DE ARCHIVOS
-        if (IsFileDropped())
+    // MANEJAR ARRASTRE Y SOLTADO DE ARCHIVOS
+    if (IsFileDropped())
+    {
+        FilePathList droppedFiles = LoadDroppedFiles();
+
+        for (int i = 0; i < droppedFiles.count; i++)
         {
-            FilePathList droppedFiles = LoadDroppedFiles();
+            const char *path = droppedFiles.paths[i];
 
-            for (int i = 0; i < droppedFiles.count; i++)
+            // Si es un archivo de audio
+            if (IsFileExtension(path, ".mp3") ||
+                IsFileExtension(path, ".wav") ||
+                IsFileExtension(path, ".ogg") ||
+                IsFileExtension(path, ".flac"))
             {
-                const char *extension = GetFileExtension(droppedFiles.paths[i]);
-
-                // Si es un archivo de audio
-                if (IsFileExtension(droppedFiles.paths[i], ".mp3") ||
-                    IsFileExtension(droppedFiles.paths[i], ".wav") ||
-                    IsFileExtension(droppedFiles.paths[i], ".ogg") ||
-                    IsFileExtension(droppedFiles.paths[i], ".flac"))
+                if (audio_cargado)
+                    UnloadSound(audio);
+                audio = LoadSound(path);
+                if (audio.frameCount > 0)
                 {
-                    if (audio_cargado)
-                        UnloadSound(audio);
+                    audio_cargado = true;
+                    strcpy(ruta_audio, path);
 
-                    audio = LoadSound(droppedFiles.paths[i]);
-                    if (audio.frameCount > 0)
-                    {
-                        audio_cargado = true;
-                        strcpy(ruta_audio, droppedFiles.paths[i]);
-
-                        // Obtener la duración en segundos
-                        float duracion_segundos = (float)audio.frameCount / (float)audio.stream.sampleRate;
-                        int minutos = (int)(duracion_segundos / 60);
-                        int segundos = (int)fmod(duracion_segundos, 60);
-
-                        // Formatear la duración en el buffer duracion
-                        snprintf(duracion, 8, "%02d:%02d", minutos, segundos);
-                    }
-                }
-                // Si es una imagen
-                else if (IsFileExtension(droppedFiles.paths[i], ".png") ||
-                         IsFileExtension(droppedFiles.paths[i], ".jpg") ||
-                         IsFileExtension(droppedFiles.paths[i], ".jpeg") ||
-                         IsFileExtension(droppedFiles.paths[i], ".bmp") ||
-                         IsFileExtension(droppedFiles.paths[i], ".tga"))
-                {
-                    if (imagen_cargada)
-                        UnloadTexture(img_portada);
-
-                    img_portada = LoadTexture(droppedFiles.paths[i]);
-                    if (img_portada.id > 0)
-                    {
-                        imagen_cargada = true;
-                        strcpy(ruta_imagen, droppedFiles.paths[i]);
-                    }
+                    // Obtener la duración en segundos y formatear
+                    float duracion_segundos = (float)audio.frameCount / (float)audio.stream.sampleRate;
+                    int minutos = (int)(duracion_segundos / 60);
+                    int segundos = (int)fmod(duracion_segundos, 60);
+                    snprintf(duracion, 8, "%02d:%02d", minutos, segundos);
+                    duracion_valida = true; // La duración es válida si se cargó el audio
                 }
             }
-
-            UnloadDroppedFiles(droppedFiles);
-        }
-
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-        {
-            // Cambiar focus al hacer clic en campos
-            if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.05, 290, ANCHO_PANTALLA * 0.425, 60}))
-                enfocado = 0;
-            else if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.05, 400, ANCHO_PANTALLA * 0.425, 60}))
-                enfocado = 1;
-            else if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.05, 510, ANCHO_PANTALLA * 0.425, 60}))
-                enfocado = 2;
-            else if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.05, 650, 400, 60}))
-                enfocado = 3;
-            else if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.525, 510, ANCHO_PANTALLA * 0.425, 60}))
-                enfocado = 4;
-            else if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.525, 650, ANCHO_PANTALLA * 0.425, 60}))
-                enfocado = 5;
-
-            // Casillas de radio
-            else if (CheckCollisionPointRec(posicion_mouse, casilla_al_inico))
-            {
-                casilla_al_inicio_seleccionada = true;
-                casilla_al_final_seleccionada = false;
-                insertar = 1;
-            }
-            else if (CheckCollisionPointRec(posicion_mouse, casilla_al_final))
-            {
-                casilla_al_inicio_seleccionada = false;
-                casilla_al_final_seleccionada = true;
-                insertar = 2;
-            }
-
-            // Botones
-            else if (CheckCollisionPointRec(posicion_mouse, boton_aceptar))
-            {
-                duracion_valida = validar_duracion(duracion);
-                if (strlen(titulo) > 0 && strlen(artista) > 0 &&
-                    duracion_valida && audio_cargado)
-                {
-                    formulario_completado = true;
-                }
-            }
-            else if (CheckCollisionPointRec(posicion_mouse, boton_cancelar))
+            // Si es una imagen
+            else if (IsFileExtension(path, ".png") ||
+                     IsFileExtension(path, ".jpg") ||
+                     IsFileExtension(path, ".jpeg") ||
+                     IsFileExtension(path, ".bmp") ||
+                     IsFileExtension(path, ".tga"))
             {
                 if (imagen_cargada)
                     UnloadTexture(img_portada);
-                if (audio_cargado)
-                    UnloadSound(audio);
-                return 0; // Cancelado
+                img_portada = LoadTexture(path);
+                if (img_portada.id > 0)
+                {
+                    imagen_cargada = true;
+                    strcpy(ruta_imagen, path);
+                }
+            }
+            // Si es un archivo de video (AÑADIDO)
+            else if (IsFileExtension(path, ".mp4") ||
+                     IsFileExtension(path, ".mov") ||
+                     IsFileExtension(path, ".avi"))
+            {
+
+                video_cargado = true;
+                strcpy(ruta_video, path);
             }
         }
 
-        // VALIDAR DURACIÓN EN TIEMPO REAL
-        if (enfocado == 2 && strlen(duracion) > 0)
+        UnloadDroppedFiles(droppedFiles);
+    }
+
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    {
+        // Cambiar focus al hacer clic en campos
+        if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.05, 290, ANCHO_PANTALLA * 0.425, 60}))
+            enfocado = 0;
+        else if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.05, 400, ANCHO_PANTALLA * 0.425, 60}))
+            enfocado = 1;
+        else if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.05, 510, ANCHO_PANTALLA * 0.425, 60}))
+            enfocado = 2;
+        else if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.05, 650, 400, 60}))
+            enfocado = 3;
+        else if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.525, 510, ANCHO_PANTALLA * 0.425, 60}))
+            enfocado = 4;
+        else if (CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.525, 650, ANCHO_PANTALLA * 0.425, 60}))
+            enfocado = 5;
+
+        // Casillas de radio
+        else if (CheckCollisionPointRec(posicion_mouse, casilla_al_inico))
+        {
+            casilla_al_inicio_seleccionada = true;
+            casilla_al_final_seleccionada = false;
+            insertar = 1;
+        }
+        else if (CheckCollisionPointRec(posicion_mouse, casilla_al_final))
+        {
+            casilla_al_inicio_seleccionada = false;
+            casilla_al_final_seleccionada = true;
+            insertar = 2;
+        }
+
+        // Botones
+        else if (CheckCollisionPointRec(posicion_mouse, boton_aceptar))
         {
             duracion_valida = validar_duracion(duracion);
+            if (strlen(titulo) > 0 && strlen(artista) > 0 &&
+                duracion_valida && audio_cargado)
+            {
+                formulario_completado = true;
+            }
         }
-
-        // DIBUJAR
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
-        float escala = fmaxf((float)ANCHO_PANTALLA / ANCHO_FONDO, (float)ALTO_PANTALLA / ALTO_FONDO);
-        DrawTexturePro(fondo, (Rectangle){0, 0, ANCHO_FONDO, ALTO_FONDO},
-                       (Rectangle){(ANCHO_PANTALLA - ANCHO_FONDO * escala) * 0.5f, (ALTO_PANTALLA - ALTO_FONDO * escala) * 0.5f, ANCHO_FONDO * escala, ALTO_FONDO * escala},
-                       (Vector2){0, 0}, 0.0f, WHITE);
-
-        // [CÓDIGO DE DIBUJO DE LA INTERFAZ COMPLETO]
-        // TÍTULO DEL FORMULARIO
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.15, 80, ANCHO_PANTALLA * 0.7, 80}, REDONDEZ, SEGMENTOS, color_fondo);
-        DrawTextEx(fuente1, "AGREGAR NUEVA CANCION", centrar_texto_horizontal(fuente1, "AGREGAR NUEVA CANCION", TAMANIO_FUENTE, 1, 80), TAMANIO_FUENTE, 1, color_verde);
-
-        // ETIQUETAS ARRIBA DE LOS CAMPOS
-        DrawTextEx(fuente2, "TITULO DE LA CANCION:", (Vector2){ANCHO_PANTALLA * 0.05, 250}, TAMANIO_FUENTE_TER, 0, color_verde);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 290, ANCHO_PANTALLA * 0.425, 60}, REDONDEZ, SEGMENTOS, enfocado == 0 ? color_campo_activo : color_campo_inactivo);
-        DrawTextEx(fuente3, titulo, (Vector2){ANCHO_PANTALLA * 0.06, 300}, TAMANIO_FUENTE_CUA, 0, enfocado == 0 ? color_texto_activo : color_texto_inactivo);
-
-        DrawTextEx(fuente2, "NOMBRE DEL ARTISTA:", (Vector2){ANCHO_PANTALLA * 0.05, 360}, TAMANIO_FUENTE_TER, 0, color_verde);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 400, ANCHO_PANTALLA * 0.425, 60}, REDONDEZ, SEGMENTOS, enfocado == 1 ? color_campo_activo : color_campo_inactivo);
-        DrawTextEx(fuente3, artista, (Vector2){ANCHO_PANTALLA * 0.06, 410}, TAMANIO_FUENTE_CUA, 0, enfocado == 1 ? color_texto_activo : color_texto_inactivo);
-
-        // CAMPO PARA AUDIO
-        DrawTextEx(fuente2, "AUDIO:", (Vector2){ANCHO_PANTALLA * 0.05, 470}, TAMANIO_FUENTE_TER, 0, color_verde);
-        DrawTextEx(fuente2, "(RUTA DEL ARCHIVO)", (Vector2){ANCHO_PANTALLA * 0.1, 488}, TAMANIO_FUENTE_QUI, 0, color_verde);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 510, ANCHO_PANTALLA * 0.425, 60}, REDONDEZ, SEGMENTOS, enfocado == 2 ? color_campo_activo : color_campo_inactivo);
-        DrawTextEx(fuente3, ruta_audio, (Vector2){ANCHO_PANTALLA * 0.06, 520}, TAMANIO_FUENTE_CUA, 0, enfocado == 2 ? color_texto_activo : color_texto_inactivo);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 580, 110, 25}, REDONDEZ, SEGMENTOS, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 615, 110, 25}) ? color_boton_pulsado : color_boton);
-        DrawTextEx(fuente2, "CARGAR AUDIO", (Vector2){ANCHO_PANTALLA * 0.06, 585}, TAMANIO_FUENTE_QUI, 0, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 615, 110, 25}) ? color_texto_activo : color_texto_inactivo);
-
-        // Indicador de audio cargado
-        if (audio_cargado)
+        else if (CheckCollisionPointRec(posicion_mouse, boton_cancelar))
         {
-            DrawTextEx(fuente2, "AUDIO CARGADO", (Vector2){970, 620}, TAMANIO_FUENTE_QUI, 0, color_exito);
+            if (imagen_cargada)
+                UnloadTexture(img_portada);
+            if (audio_cargado)
+                UnloadSound(audio);
+            return 0; // Cancelado
         }
-
-        // CAMPO DE DURACIÓN CON VALIDACIÓN VISUAL
-        Color color_duracion = enfocado == 2 ? color_campo_activo : color_campo_inactivo;
-
-        DrawTextEx(fuente2, "DURACION [MM:SS]:", (Vector2){ANCHO_PANTALLA * 0.05, 610}, TAMANIO_FUENTE_TER, 0, color_verde);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 650, 400, 60}, REDONDEZ, SEGMENTOS, enfocado == 3 ? color_campo_activo : color_campo_inactivo);
-        DrawTextEx(fuente3, duracion, (Vector2){ANCHO_PANTALLA * 0.06, 660}, TAMANIO_FUENTE_CUA, 0, enfocado == 3 ? color_texto_activo : color_texto_inactivo);
-
-        if (strlen(duracion) > 0 && !duracion_valida)
-        {
-            color_duracion = color_error;
-        }
-
-        // MENSAJE DE ERROR SI LA DURACIÓN NO ES VÁLIDA
-        if (strlen(duracion) > 0 && !duracion_valida)
-        {
-            DrawTextEx(fuente3, "FORMATO INVALIDO. \nUSE MM:SS", (Vector2){520, 660}, TAMANIO_FUENTE_QUI, 0, color_error);
-        }
-
-        // CASILLAS DE MARCA (RADIO BUTTONS)
-        DrawTextEx(fuente2, "SELECCIONE UNA OPCION:", (Vector2){ANCHO_PANTALLA * 0.05, 720}, TAMANIO_FUENTE_TER, 0, color_verde);
-        DrawRectangleRounded(casilla_al_inico, REDONDEZ, SEGMENTOS, casilla_al_inicio_seleccionada ? color_casilla_marcada : color_campo_inactivo);
-        DrawTextEx(fuente2, "INSERTAR AL INICIO", (Vector2){ANCHO_PANTALLA * 0.07, 760}, TAMANIO_FUENTE_CUA, 0, color_verde);
-        DrawRectangleRounded(casilla_al_final, REDONDEZ, SEGMENTOS, casilla_al_final_seleccionada ? color_casilla_marcada : color_campo_inactivo);
-        DrawTextEx(fuente2, "INSERTAR AL FINAL", (Vector2){ANCHO_PANTALLA * 0.07, 790}, TAMANIO_FUENTE_CUA, 0, color_verde);
-
-        // IMAGEN
-        DrawTextEx(fuente2, "IMAGEN:", (Vector2){ANCHO_PANTALLA * 0.525, 470}, TAMANIO_FUENTE_TER, 0, color_verde);
-        DrawTextEx(fuente2, "[ RUTA DEL ARCHIVO ]", (Vector2){ANCHO_PANTALLA * 0.575, 488}, TAMANIO_FUENTE_QUI, 0, color_verde);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 510, ANCHO_PANTALLA * 0.425, 60}, REDONDEZ, SEGMENTOS, enfocado == 4 ? color_campo_activo : color_campo_inactivo);
-        DrawTextEx(fuente3, ruta_imagen, (Vector2){ANCHO_PANTALLA * 0.535, 520}, TAMANIO_FUENTE_CUA, 0, enfocado == 4 ? color_texto_activo : color_texto_inactivo);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 580, 120, 25}, REDONDEZ, SEGMENTOS, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 480, 120, 25}) ? color_boton_pulsado : color_boton);
-        DrawTextEx(fuente2, "CARGAR IMAGEN", (Vector2){ANCHO_PANTALLA * 0.535, 585}, TAMANIO_FUENTE_QUI, 0, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 480, 120, 25}) ? color_texto_activo : color_texto_inactivo);
-
-        DrawRectangle(ANCHO_PANTALLA * 0.795, 170, 300, 300, CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.76481, 170, 200, 200}) ? color_boton_pulsado : color_boton);
-
-        SetTextureFilter(img_portada, TEXTURE_FILTER_BILINEAR);
-        // Mostrar imagen cargada con tamaño 200x200
-        if (imagen_cargada)
-        {
-            Rectangle dest = {ANCHO_PANTALLA * 0.795, 170, 300, 300};
-            Rectangle source = {0, 0, img_portada.width, img_portada.height};
-            DrawTexturePro(img_portada, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
-        }
-
-        // CAMPO PARA VIDEO
-        DrawTextEx(fuente2, "VIDEO:", (Vector2){ANCHO_PANTALLA * 0.525, 610}, TAMANIO_FUENTE_TER, 0, color_verde);
-        DrawTextEx(fuente2, "(RUTA DEL ARCHIVO)", (Vector2){ANCHO_PANTALLA * 0.565, 628}, TAMANIO_FUENTE_QUI, 0, color_verde);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 650, ANCHO_PANTALLA * 0.425, 60}, REDONDEZ, SEGMENTOS, enfocado == 5 ? color_campo_activo : color_campo_inactivo);
-        DrawTextEx(fuente3, ruta_video, (Vector2){ANCHO_PANTALLA * 0.535, 660}, TAMANIO_FUENTE_CUA, 0, enfocado == 5 ? color_texto_activo : color_texto_inactivo);
-        DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 720, 110, 25}, REDONDEZ, SEGMENTOS, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 615, 110, 25}) ? color_boton_pulsado : color_boton);
-        DrawTextEx(fuente2, "CARGAR VIDEO", (Vector2){ANCHO_PANTALLA * 0.535, 725}, TAMANIO_FUENTE_QUI, 0, CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 615, 110, 25}) ? color_texto_activo : color_texto_inactivo);
-
-        // BOTONES ACEPTAR Y CANCELAR
-        DrawRectangleRounded(boton_aceptar, REDONDEZ, SEGMENTOS, CheckCollisionPointRec(posicion_mouse, boton_aceptar) ? color_boton_pulsado : color_boton);
-        DrawTextEx(fuente2, "ACEPTAR", (Vector2){boton_aceptar.x + 45, boton_aceptar.y + 10}, TAMANIO_FUENTE_TER, 0, CheckCollisionPointRec(posicion_mouse, boton_aceptar) ? color_texto_activo : color_texto_inactivo);
-
-        DrawRectangleRounded(boton_cancelar, REDONDEZ, SEGMENTOS, CheckCollisionPointRec(posicion_mouse, boton_cancelar) ? color_boton_pulsado : color_boton);
-        DrawTextEx(fuente2, "CANCELAR", (Vector2){boton_cancelar.x + 40, boton_cancelar.y + 10}, TAMANIO_FUENTE_TER, 0, CheckCollisionPointRec(posicion_mouse, boton_cancelar) ? color_texto_activo : color_texto_inactivo);
-
-        // Mensaje de instrucción para arrastrar archivos
-        DrawTextEx(fuente3, "ARRASTRA ARCHIVOS DEL AUDIO, IMAGEN Y VIDEO AQUI", centrar_texto_horizontal(fuente3, "ARRASTRA ARCHIVOS DEL AUDIO, IMAGEN Y VIDEO AQUI", TAMANIO_FUENTE_CUA, 1, 830), TAMANIO_FUENTE_CUA, 1, color_verde);
-
-        EndDrawing();
     }
 
-    // PROCESAR RESULTADO
-    if (formulario_completado)
+    // VALIDAR DURACIÓN EN TIEMPO REAL
+    if (enfocado == 3)
     {
-        printf("entre");
-        agregar_cancion(playlist, titulo, artista, duracion, ruta_imagen, ruta_audio, ruta_video, insertar);
-        mostrarPlaylist(*playlist);
-        return 1; // Éxito
+        duracion_valida = validar_duracion(duracion);
     }
+
+    // DIBUJAR
+    BeginDrawing();
+    ClearBackground(RAYWHITE);
+    float escala = fmaxf((float)ANCHO_PANTALLA / ANCHO_FONDO, (float)ALTO_PANTALLA / ALTO_FONDO);
+    DrawTexturePro(fondo, (Rectangle){0, 0, ANCHO_FONDO, ALTO_FONDO},
+                   (Rectangle){(ANCHO_PANTALLA - ANCHO_FONDO * escala) * 0.5f, (ALTO_PANTALLA - ALTO_FONDO * escala) * 0.5f, ANCHO_FONDO * escala, ALTO_FONDO * escala},
+                   (Vector2){0, 0}, 0.0f, WHITE);
+
+    // [CÓDIGO DE DIBUJO DE LA INTERFAZ COMPLETO]
+    // TÍTULO DEL FORMULARIO
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.15, 80, ANCHO_PANTALLA * 0.7, 80}, REDONDEZ, SEGMENTOS, color_fondo);
+    DrawTextEx(fuente1, "AGREGAR NUEVA CANCION", centrar_texto_horizontal(fuente1, "AGREGAR NUEVA CANCION", TAMANIO_FUENTE, 1, 80), TAMANIO_FUENTE, 1, color_verde);
+
+    // ETIQUETAS ARRIBA DE LOS CAMPOS
+    DrawTextEx(fuente2, "TITULO DE LA CANCION:", (Vector2){ANCHO_PANTALLA * 0.05, 250}, TAMANIO_FUENTE_TER, 0, color_verde);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 290, ANCHO_PANTALLA * 0.425, 60}, REDONDEZ, SEGMENTOS, enfocado == 0 ? color_campo_activo : color_campo_inactivo);
+    DrawTextEx(fuente3, titulo, (Vector2){ANCHO_PANTALLA * 0.06, 300}, TAMANIO_FUENTE_CUA, 0, enfocado == 0 ? color_texto_activo : color_texto_inactivo);
+
+    DrawTextEx(fuente2, "NOMBRE DEL ARTISTA:", (Vector2){ANCHO_PANTALLA * 0.05, 360}, TAMANIO_FUENTE_TER, 0, color_verde);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 400, ANCHO_PANTALLA * 0.425, 60}, REDONDEZ, SEGMENTOS, enfocado == 1 ? color_campo_activo : color_campo_inactivo);
+    DrawTextEx(fuente3, artista, (Vector2){ANCHO_PANTALLA * 0.06, 410}, TAMANIO_FUENTE_CUA, 0, enfocado == 1 ? color_texto_activo : color_texto_inactivo);
+
+    // CAMPO PARA AUDIO
+    DrawTextEx(fuente2, "AUDIO:", (Vector2){ANCHO_PANTALLA * 0.05, 470}, TAMANIO_FUENTE_TER, 0, color_verde);
+    DrawTextEx(fuente2, "(RUTA DEL ARCHIVO)", (Vector2){ANCHO_PANTALLA * 0.1, 488}, TAMANIO_FUENTE_QUI, 0, color_verde);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 510, ANCHO_PANTALLA * 0.425, 60}, REDONDEZ, SEGMENTOS, enfocado == 2 ? color_campo_activo : color_campo_inactivo);
+    DrawTextEx(fuente3, ruta_audio, (Vector2){ANCHO_PANTALLA * 0.06, 520}, TAMANIO_FUENTE_CUA, 0, enfocado == 2 ? color_texto_activo : color_texto_inactivo);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 580, 110, 25}, REDONDEZ, SEGMENTOS, CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.05, 580, 110, 25}) ? color_boton_pulsado : color_boton);
+    DrawTextEx(fuente2, "CARGAR AUDIO", (Vector2){ANCHO_PANTALLA * 0.06, 585}, TAMANIO_FUENTE_QUI, 0, CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.05, 580, 110, 25}) ? color_texto_activo : color_texto_inactivo);
+
+    // Indicador de audio cargado
+    if (audio_cargado)
+    {
+        DrawTextEx(fuente2, "AUDIO CARGADO", (Vector2){970, 620}, TAMANIO_FUENTE_QUI, 0, color_exito);
+    }
+
+    // CAMPO DE DURACIÓN CON VALIDACIÓN VISUAL
+    Color color_duracion = enfocado == 2 ? color_campo_activo : color_campo_inactivo;
+
+    DrawTextEx(fuente2, "DURACION [MM:SS]:", (Vector2){ANCHO_PANTALLA * 0.05, 610}, TAMANIO_FUENTE_TER, 0, color_verde);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.05, 650, 400, 60}, REDONDEZ, SEGMENTOS, enfocado == 3 ? color_campo_activo : color_campo_inactivo);
+    DrawTextEx(fuente3, duracion, (Vector2){ANCHO_PANTALLA * 0.06, 660}, TAMANIO_FUENTE_CUA, 0, enfocado == 3 ? color_texto_activo : color_texto_inactivo);
+
+    if (strlen(duracion) > 0 && !duracion_valida)
+    {
+        color_duracion = color_error;
+    }
+
+    // MENSAJE DE ERROR SI LA DURACIÓN NO ES VÁLIDA
+    if (strlen(duracion) > 0 && !duracion_valida)
+    {
+        DrawTextEx(fuente3, "FORMATO INVALIDO. \nUSE MM:SS", (Vector2){520, 660}, TAMANIO_FUENTE_QUI, 0, color_error);
+    }
+
+    // CASILLAS DE MARCA (RADIO BUTTONS)
+    DrawTextEx(fuente2, "SELECCIONE UNA OPCION:", (Vector2){ANCHO_PANTALLA * 0.05, 720}, TAMANIO_FUENTE_TER, 0, color_verde);
+    DrawRectangleRounded(casilla_al_inico, REDONDEZ, SEGMENTOS, casilla_al_inicio_seleccionada ? color_casilla_marcada : color_campo_inactivo);
+    DrawTextEx(fuente2, "INSERTAR AL INICIO", (Vector2){ANCHO_PANTALLA * 0.07, 760}, TAMANIO_FUENTE_CUA, 0, color_verde);
+    DrawRectangleRounded(casilla_al_final, REDONDEZ, SEGMENTOS, casilla_al_final_seleccionada ? color_casilla_marcada : color_campo_inactivo);
+    DrawTextEx(fuente2, "INSERTAR AL FINAL", (Vector2){ANCHO_PANTALLA * 0.07, 790}, TAMANIO_FUENTE_CUA, 0, color_verde);
+
+    // IMAGEN
+    DrawTextEx(fuente2, "IMAGEN:", (Vector2){ANCHO_PANTALLA * 0.525, 470}, TAMANIO_FUENTE_TER, 0, color_verde);
+    DrawTextEx(fuente2, "[ RUTA DEL ARCHIVO ]", (Vector2){ANCHO_PANTALLA * 0.575, 488}, TAMANIO_FUENTE_QUI, 0, color_verde);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 510, ANCHO_PANTALLA * 0.425, 60}, REDONDEZ, SEGMENTOS, enfocado == 4 ? color_campo_activo : color_campo_inactivo);
+    DrawTextEx(fuente3, ruta_imagen, (Vector2){ANCHO_PANTALLA * 0.535, 520}, TAMANIO_FUENTE_CUA, 0, enfocado == 4 ? color_texto_activo : color_texto_inactivo);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 580, 120, 25}, REDONDEZ, SEGMENTOS, CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.525, 580, 120, 25}) ? color_boton_pulsado : color_boton);
+    DrawTextEx(fuente2, "CARGAR IMAGEN", (Vector2){ANCHO_PANTALLA * 0.535, 585}, TAMANIO_FUENTE_QUI, 0, CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.525, 580, 120, 25}) ? color_texto_activo : color_texto_inactivo);
+
+    DrawRectangle(ANCHO_PANTALLA * 0.795, 170, 300, 300, CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.76481, 170, 200, 200}) ? color_boton_pulsado : color_boton);
+
+    SetTextureFilter(img_portada, TEXTURE_FILTER_BILINEAR);
+    // Mostrar imagen cargada con tamaño 200x200
+    if (imagen_cargada)
+    {
+        Rectangle dest = {ANCHO_PANTALLA * 0.795, 170, 300, 300};
+        Rectangle source = {0, 0, img_portada.width, img_portada.height};
+        DrawTexturePro(img_portada, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+    }
+
+    // CAMPO PARA VIDEO
+    DrawTextEx(fuente2, "VIDEO:", (Vector2){ANCHO_PANTALLA * 0.525, 610}, TAMANIO_FUENTE_TER, 0, color_verde);
+    DrawTextEx(fuente2, "(RUTA DEL ARCHIVO)", (Vector2){ANCHO_PANTALLA * 0.565, 628}, TAMANIO_FUENTE_QUI, 0, color_verde);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 650, ANCHO_PANTALLA * 0.425, 60}, REDONDEZ, SEGMENTOS, enfocado == 5 ? color_campo_activo : color_campo_inactivo);
+    DrawTextEx(fuente3, ruta_video, (Vector2){ANCHO_PANTALLA * 0.535, 660}, TAMANIO_FUENTE_CUA, 0, enfocado == 5 ? color_texto_activo : color_texto_inactivo);
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.525, 720, 110, 25}, REDONDEZ, SEGMENTOS, CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.525, 720, 110, 25}) ? color_boton_pulsado : color_boton);
+    DrawTextEx(fuente2, "CARGAR VIDEO", (Vector2){ANCHO_PANTALLA * 0.535, 725}, TAMANIO_FUENTE_QUI, 0, CheckCollisionPointRec(posicion_mouse, (Rectangle){ANCHO_PANTALLA * 0.525, 720, 110, 25}) ? color_texto_activo : color_texto_inactivo);
+
+    // Indicador de video cargado (AÑADIDO)
+    if (video_cargado)
+    {
+        DrawTextEx(fuente2, "VIDEO CARGADO", (Vector2){ANCHO_PANTALLA * 0.525 + 130, 725}, TAMANIO_FUENTE_QUI, 0, color_exito);
+    }
+
+    // BOTONES ACEPTAR Y CANCELAR
+    DrawRectangleRounded(boton_aceptar, REDONDEZ, SEGMENTOS, CheckCollisionPointRec(posicion_mouse, boton_aceptar) ? color_boton_pulsado : color_boton);
+    DrawTextEx(fuente2, "ACEPTAR", (Vector2){boton_aceptar.x + 45, boton_aceptar.y + 10}, TAMANIO_FUENTE_TER, 0, CheckCollisionPointRec(posicion_mouse, boton_aceptar) ? color_texto_activo : color_texto_inactivo);
+
+    DrawRectangleRounded(boton_cancelar, REDONDEZ, SEGMENTOS, CheckCollisionPointRec(posicion_mouse, boton_cancelar) ? color_boton_pulsado : color_boton);
+    DrawTextEx(fuente2, "CANCELAR", (Vector2){boton_cancelar.x + 40, boton_cancelar.y + 10}, TAMANIO_FUENTE_TER, 0, CheckCollisionPointRec(posicion_mouse, boton_cancelar) ? color_texto_activo : color_texto_inactivo);
+
+    // Mensaje de instrucción para arrastrar archivos
+    DrawTextEx(fuente3, "ARRASTRA ARCHIVOS DEL AUDIO, IMAGEN Y VIDEO AQUI", centrar_texto_horizontal(fuente3, "ARRASTRA ARCHIVOS DEL AUDIO, IMAGEN Y VIDEO AQUI", TAMANIO_FUENTE_CUA, 1, 830), TAMANIO_FUENTE_CUA, 1, color_verde);
+
+    EndDrawing();
+}
+
+// PROCESAR RESULTADO
+if (formulario_completado)
+{
+    printf("entre");
+    agregar_cancion(playlist, titulo, artista, duracion, ruta_imagen, ruta_audio, ruta_video, insertar);
+    mostrarPlaylist(*playlist);
+    if (imagen_cargada)
+        UnloadTexture(img_portada);
+    if (audio_cargado)
+        UnloadSound(audio);
+    if (video_cargado)
+        UnloadVideo(video); // AÑADIDO: Descargar video
+
+    return 1; // Éxito
+}
+
+if (imagen_cargada)
+    UnloadTexture(img_portada);
+if (audio_cargado)
+    UnloadSound(audio);
+if (video_cargado)
+    UnloadVideo(video);
+
+return 0;
 }
 //**************************************************************************************************************************
 void dibujar_tabla_canciones(Font fuente1, Font fuente2, Cancion *playlist, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo)

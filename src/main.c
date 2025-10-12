@@ -1,14 +1,19 @@
 ﻿#include "CimaBits.h"
 
-bool pantalla_desarrollador_activa = false;
-bool busqueda = false;
-bool seleccion_busqueda = false;
-bool multimedia = false;
-bool esta_reproduciendo = true;
-bool mutear = false;
-
 int main()
 {
+    bool pantalla_desarrollador_activa = false;
+    bool busqueda = false;
+    static bool seleccion_busqueda = false;
+    static bool nombre = false;
+    static bool artista = false;
+    static bool duracion = false;
+    bool abrir_busqueda_anterior = busqueda;
+
+    bool multimedia = false;
+    bool esta_reproduciendo = true;
+    bool mutear = false;
+
     CancionPTR playlist = crear_cancion();
 
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
@@ -68,17 +73,21 @@ int main()
         // PARTE SUPERIOR
         if (busqueda)
         {
-            bool nombre = false;
-            bool artista = false;
-            bool duracion = false;
-            
-            Rectangle casilla_nombre = {ANCHO_PANTALLA * 0.4, ALTO_PANTALLA * 0.1, 25, 25};
-            Rectangle casilla_artista = {ANCHO_PANTALLA * 0.6, ALTO_PANTALLA * 0.1, 25, 25};
-            Rectangle casilla_duracion = {ANCHO_PANTALLA * 0.8, ALTO_PANTALLA * 0.1, 25, 25};
+            Rectangle casilla_nombre = {ANCHO_PANTALLA * 0.4, ALTO_PANTALLA * 0.1, 30, 30};
+            Rectangle casilla_artista = {ANCHO_PANTALLA * 0.6, ALTO_PANTALLA * 0.1, 30, 30};
+            Rectangle casilla_duracion = {ANCHO_PANTALLA * 0.8, ALTO_PANTALLA * 0.1, 30, 30};
 
             DrawRectangleRounded((Rectangle){550, ALTO_PANTALLA * 0.01, 1200, 90}, REDONDEZ + 0.5, SEGMENTOS, color_verde);
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
+                if (busqueda && !abrir_busqueda_anterior)
+                {
+                    nombre = false;
+                    artista = false;
+                    duracion = false;
+                    seleccion_busqueda = false;
+                }
+
                 if (CheckCollisionPointRec(posicion_mouse, casilla_nombre))
                 {
                     nombre = true;
@@ -101,17 +110,21 @@ int main()
                     seleccion_busqueda = true;
                 }
             }
-            
-            DrawRectangleRounded(casilla_nombre, REDONDEZ, SEGMENTOS, nombre ? color_casilla_marcada : color_campo_inactivo);
-            DrawRectangleRounded(casilla_artista, REDONDEZ, SEGMENTOS, artista ? color_casilla_marcada : color_campo_inactivo);
-            DrawRectangleRounded(casilla_duracion, REDONDEZ, SEGMENTOS, duracion ? color_casilla_marcada : color_campo_inactivo);
 
-            if (manejar_boton_simple(boton_aceptar_busqueda) && seleccion_busqueda)
+            DrawTextEx(fuente2, "FILTROS:", (Vector2){ANCHO_PANTALLA * 0.3, ALTO_PANTALLA * 0.1 - 3}, TAMANIO_FUENTE_CUA, 1, color_verde);
+            DrawRectangleRounded(casilla_nombre, REDONDEZ, SEGMENTOS, nombre ? color_casilla_marcada : color_campo_inactivo);
+            DrawTextEx(fuente2, "NOMBRE", (Vector2){ANCHO_PANTALLA * 0.4 + 35, ALTO_PANTALLA * 0.1 - 3}, TAMANIO_FUENTE_CUA, 1, color_verde);
+            DrawRectangleRounded(casilla_artista, REDONDEZ, SEGMENTOS, artista ? color_casilla_marcada : color_campo_inactivo);
+            DrawTextEx(fuente2, "ARTISTA", (Vector2){ANCHO_PANTALLA * 0.6 + 35, ALTO_PANTALLA * 0.1 - 3}, TAMANIO_FUENTE_CUA, 1, color_verde);
+            DrawRectangleRounded(casilla_duracion, REDONDEZ, SEGMENTOS, duracion ? color_casilla_marcada : color_campo_inactivo);
+            DrawTextEx(fuente2, "DURACION", (Vector2){ANCHO_PANTALLA * 0.8 + 35, ALTO_PANTALLA * 0.1 - 3}, TAMANIO_FUENTE_CUA, 1, color_verde);
+
+            if (manejar_boton_simple(boton_aceptar_busqueda) && !seleccion_busqueda)
             {
-                DrawCircle(700, 700, 1.23, color_amarillo);
+                DrawCircle(700, 700, 300, color_amarillo);
             }
             // Dibujar y manejar el botón para cerrar la búsqueda
-            if (manejar_boton_simple(boton_cancelar_busqueda) || IsKeyPressed(KEY_DELETE))
+            if (manejar_boton_simple(boton_cancelar_busqueda))
             {
                 busqueda = false;
             }
@@ -121,7 +134,7 @@ int main()
             // Dibujar ambos botones normalmente
             if (manejar_boton_simple(boton_agregar))
             {
-                formulario(&playlist, posicion_mouse, fondo, fuente_titulo, fuente1, fuente2);
+                formulario(&playlist, fondo, fuente_titulo, fuente1, fuente2);
             }
 
             if (manejar_boton_simple(boton_buscar) || IsKeyPressed(KEY_F))
