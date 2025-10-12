@@ -7,8 +7,8 @@
 //**************************************************************************************************************************
 //  CONSTANTES
 //**************************************************************************************************************************
-#define ANCHO_FONDO 3840
-#define ALTO_FONDO 2160
+#define ANCHO_FONDO 5472 // 3840
+#define ALTO_FONDO 3648  // 2160
 #define TAMANIO_FUENTE 80
 #define TAMANIO_FUENTE_SEC 60
 #define TAMANIO_FUENTE_TER 45
@@ -35,6 +35,20 @@ Color color_casilla_marcada = {0, 60, 19, 255};
 Color color_error = {204, 0, 0, 255};
 Color color_exito = {0, 128, 0, 255};
 
+Boton_Interfaz boton_buscar;
+Boton_Interfaz boton_agregar;
+Boton_Interfaz boton_play;
+Boton_Interfaz boton_pausa;
+Boton_Interfaz boton_retroceder;
+Boton_Interfaz boton_adelantar;
+Boton_Interfaz boton_activar_volumen;
+Boton_Interfaz boton_silenciar_volumen;
+Boton_Interfaz boton_eliminar;
+Boton_Interfaz boton_aceptar_busqueda;
+Boton_Interfaz boton_cancelar_busqueda;
+Boton_Interfaz boton_aceptar_forms;
+Boton_Interfaz boton_cancelar_forms;
+
 Estado_Imagen imagen_actual = {0};
 Estado_Audio audio_actual = {0};
 //**************************************************************************************************************************
@@ -45,7 +59,10 @@ void pantalla_desarrollador(Font fuente1, Font fuente2, Font fuente3);
 void secciones_visuales_encabezados();
 void secciones_visuales_musica();
 void secciones_visuales_video();
-int formulario(CancionPTR *playlist, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3);
+void configurar_botones();
+int formulario(CancionPTR *playlist, Vector2 posicion_mouse, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3);
+void dibujar_tabla_canciones(Font fuente1, Font fuente2, Cancion *playlist, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo);
+void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproduciendo);
 
 //**************************************************************************************************************************
 //  FUNCIONES VISUALES
@@ -129,7 +146,146 @@ void secciones_visuales_video()
     DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.7, ALTO_PANTALLA * 0.712, ANCHO_PANTALLA * 0.29, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
 }
 //**************************************************************************************************************************
-int formulario(CancionPTR *playlist, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3)
+void configurar_botones()
+{
+    // Carga las texturas
+    Texture2D textura_buscar = LoadTexture("assets/iconos/buscar.png");
+    Texture2D textura_agregar = LoadTexture("assets/iconos/agregar.png");
+    Texture2D textura_play = LoadTexture("assets/iconos/play.png");
+    Texture2D textura_pausa = LoadTexture("assets/iconos/pausa.png");
+    Texture2D textura_retroceder = LoadTexture("assets/iconos/regresar.png");
+    Texture2D textura_adelantar = LoadTexture("assets/iconos/adelantar.png");
+    Texture2D textura_activar = LoadTexture("assets/iconos/subir_volumen.png");
+    Texture2D textura_silenciar = LoadTexture("assets/iconos/mutear_volumen.png");
+    Texture2D textura_eliminar = LoadTexture("assets/iconos/eliminar.png");
+    Texture2D textura_aceptar_busqueda = LoadTexture("assets/iconos/lupa.png");
+    Texture2D textura_cancelar_busqueda = LoadTexture("assets/iconos/cancelar.png");
+
+    SetTextureFilter(textura_buscar, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(textura_agregar, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(textura_play, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(textura_pausa, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(textura_retroceder, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(textura_adelantar, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(textura_activar, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(textura_silenciar, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(textura_eliminar, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(textura_aceptar_busqueda, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(textura_cancelar_busqueda, TEXTURE_FILTER_BILINEAR);
+
+    // Factor de escala (25% del tamaño original → 75% más pequeños)
+    float escala = 0.75f;
+
+    // Calcula las posiciones y dimensiones para la sección superior
+    float margen_superior_y = ALTO_PANTALLA * 0.02;
+    float margen_derecho = ANCHO_PANTALLA - 50;
+    float espaciado_botones_top = 180 * escala; // ajustado también
+
+    // Botón buscar
+    boton_buscar = (Boton_Interfaz){
+        .textura = textura_buscar,
+        .rect = {
+            margen_derecho - (textura_agregar.width * escala) - espaciado_botones_top,
+            margen_superior_y,
+            textura_agregar.width * escala,
+            textura_agregar.height * escala}};
+
+    // Botón agregar
+    boton_agregar = (Boton_Interfaz){
+        .textura = textura_agregar,
+        .rect = {
+            margen_derecho - (textura_buscar.width * escala),
+            margen_superior_y,
+            textura_buscar.width * escala,
+            textura_buscar.height * escala}};
+
+    // Botón aceptar busqueda
+    boton_aceptar_busqueda = (Boton_Interfaz){
+        .textura = textura_aceptar_busqueda,
+        .rect = {
+            (margen_derecho /*- 200*/) - (textura_aceptar_busqueda.width * escala) - espaciado_botones_top,
+            margen_superior_y,
+            textura_aceptar_busqueda.width * (escala * 0.75),
+            textura_aceptar_busqueda.height * (escala * 0.75)}};
+
+    // Botón cancelar busqueda
+    boton_cancelar_busqueda = (Boton_Interfaz){
+        .textura = textura_cancelar_busqueda,
+        .rect = {
+            margen_derecho - (textura_cancelar_busqueda.width * escala),
+            margen_superior_y,
+            textura_cancelar_busqueda.width * escala,
+            textura_cancelar_busqueda.height * escala}};
+
+    // Botón eliminar
+    boton_eliminar = (Boton_Interfaz){
+        .textura = textura_eliminar,
+        .rect = {
+            740 - (textura_eliminar.width * escala),  // X: derecha del área - ancho del botón
+            850 - (textura_eliminar.height * escala), // Y: parte inferior del área - alto del botón
+            textura_eliminar.width * escala,
+            textura_eliminar.height * escala}};
+
+    // Calcula las posiciones y dimensiones para la sección inferior
+    float margen_inferior_y = ALTO_PANTALLA * 0.80 + 90;
+    float centro_pantalla_x = ANCHO_PANTALLA / 3;
+    float espaciado_botones_bottom = 150 * escala; // ajustado también
+
+    // Botón play
+    boton_play = (Boton_Interfaz){
+        .textura = textura_play,
+        .rect = {
+            centro_pantalla_x / 2 - (textura_play.width * escala / 2),
+            margen_inferior_y,
+            textura_play.width * escala,
+            textura_play.height * escala}};
+
+    boton_pausa = (Boton_Interfaz){
+        .textura = textura_pausa,
+        .rect = {
+            centro_pantalla_x / 2 - (textura_pausa.width * escala / 2),
+            margen_inferior_y,
+            textura_pausa.width * escala,
+            textura_pausa.height * escala}};
+
+    // Botón retroceder
+    boton_retroceder = (Boton_Interfaz){
+        .textura = textura_retroceder,
+        .rect = {
+            centro_pantalla_x / 2 - (textura_retroceder.width * escala / 2) - espaciado_botones_bottom,
+            margen_inferior_y,
+            textura_retroceder.width * escala,
+            textura_retroceder.height * escala}};
+
+    // Botón adelantar
+    boton_adelantar = (Boton_Interfaz){
+        .textura = textura_adelantar,
+        .rect = {
+            centro_pantalla_x / 2 - (textura_adelantar.width * escala / 2) + espaciado_botones_bottom,
+            margen_inferior_y,
+            textura_adelantar.width * escala,
+            textura_adelantar.height * escala}};
+
+    // Botón activar audio
+    boton_activar_volumen = (Boton_Interfaz){
+        .textura = textura_activar,
+        .rect = {
+            centro_pantalla_x * 2.55 - (textura_activar.width * escala / 2) + espaciado_botones_bottom,
+            margen_inferior_y,
+            textura_activar.width * escala,
+            textura_activar.height * escala}};
+
+    // Botón silenciar
+    boton_silenciar_volumen = (Boton_Interfaz){
+        .textura = textura_silenciar,
+        .rect = {
+            centro_pantalla_x * 2.55 - (textura_silenciar.width * escala / 2) + espaciado_botones_bottom,
+            margen_inferior_y,
+            textura_silenciar.width * escala,
+            textura_silenciar.height * escala}};
+}
+//**************************************************************************************************************************
+int formulario(CancionPTR *playlist, Vector2 posicion_mouse, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3)
 {
     bool formulario_completado = false;
     bool duracion_valida = false;
@@ -154,6 +310,7 @@ int formulario(CancionPTR *playlist, Texture2D fondo, Font fuente1, Font fuente2
     Rectangle casilla_al_final = {ANCHO_PANTALLA * 0.05, 795, 25, 25};
 
     // BOTONES
+    
     Rectangle boton_aceptar = {700, ALTO_PANTALLA * 0.85, 200, 60};
     Rectangle boton_cancelar = {1000, ALTO_PANTALLA * 0.85, 200, 60};
 
@@ -231,9 +388,6 @@ int formulario(CancionPTR *playlist, Texture2D fondo, Font fuente1, Font fuente2
         {
             enfocado = (enfocado + 1) % 6;
         }
-
-        // VERIFICAR CLICS EN BOTONES Y CAMPOS
-        Vector2 posicion_mouse = GetMousePosition();
 
         // MANEJAR ENTER PARA CARGAR IMAGEN
         if ((IsKeyPressed(KEY_ENTER) || (CheckCollisionPointRec(posicion_mouse, (Rectangle){850, 480, 120, 25}) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))) && enfocado == 3 && strlen(ruta_imagen) > 0)
@@ -491,12 +645,6 @@ int formulario(CancionPTR *playlist, Texture2D fondo, Font fuente1, Font fuente2
         mostrarPlaylist(*playlist);
         return 1; // Éxito
     }
-
-    // Limpiar recursos si se canceló
-    if (imagen_cargada)
-        UnloadTexture(img_portada);
-    if (audio_cargado)
-        UnloadSound(audio);
 }
 //**************************************************************************************************************************
 void dibujar_tabla_canciones(Font fuente1, Font fuente2, Cancion *playlist, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo)

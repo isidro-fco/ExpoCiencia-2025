@@ -33,7 +33,7 @@ typedef struct
     Texture2D textura;
     Rectangle rect;
     bool activo;
-} Boton_Simple;
+} Boton_Interfaz;
 
 typedef struct
 {
@@ -70,6 +70,7 @@ typedef struct
     char ruta[255];
     void *reproducir_video;
 } Estado_Video;
+
 //**************************************************************************************************************************
 //  CONSTANTES
 //**************************************************************************************************************************
@@ -83,6 +84,7 @@ CancionPTR crear_cancion();
 int agregar_cancion(CancionPTR *playlist, const char *titulo, const char *artista, const char *duracion, const char *ruta_imagen, const char *ruta_audio, const char *ruta_video, int insertar);
 void insertar_primero(CancionPTR nodo, CancionPTR *lista);
 void insertar_ultimo(CancionPTR nodo, CancionPTR *lista);
+int manejar_boton_simple(Boton_Interfaz boton);
 
 void mostrarPlaylist(CancionPTR lista);
 void mostrarCancion(CancionPTR cancion);
@@ -134,7 +136,6 @@ int agregar_cancion(CancionPTR *playlist, const char *titulo, const char *artist
         return 0;
     }
 
-    
     strcpy(nodo->titulo, titulo);
     strcpy(nodo->artista, artista);
     strcpy(nodo->duracion, duracion);
@@ -205,7 +206,27 @@ void insertar_ultimo(CancionPTR nodo, CancionPTR *lista)
     }
 }
 //******************************************************************************************************
+int manejar_boton_simple(Boton_Interfaz boton)
+{
+    Vector2 posision_mouse = GetMousePosition();
+    Color color_boton = WHITE;
+    int boton_presionado = 0;
 
+    if (CheckCollisionPointRec(posision_mouse, boton.rect))
+    {
+        color_boton = GRAY;
+
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        {
+            boton_presionado = 1;
+        }
+    }
+
+    DrawTexturePro(boton.textura, (Rectangle){0, 0, boton.textura.width, boton.textura.height}, boton.rect, (Vector2){0, 0}, 0.0f, color_boton);
+
+    return boton_presionado;
+}
+//******************************************************************************************************
 // PRUEBA DE QUE SI SE LLENA LA PLAYLIST
 void mostrarPlaylist(CancionPTR lista)
 {
@@ -217,7 +238,6 @@ void mostrarPlaylist(CancionPTR lista)
         aux = aux->siguiente;
     }
 }
-
 void mostrarCancion(CancionPTR cancion)
 {
     printf("%-20s %-20s\n", cancion->titulo, cancion->artista);
