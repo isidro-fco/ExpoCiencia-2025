@@ -48,15 +48,13 @@ Boton_Interfaz boton_cancelar_busqueda;
 Boton_Interfaz boton_aceptar_forms;
 Boton_Interfaz boton_cancelar_forms;
 
-Estado_Imagen imagen_actual = {0};
-Estado_Audio audio_actual = {0};
 //**************************************************************************************************************************
 //  PROTOTIPOS
 //**************************************************************************************************************************
 Vector2 centrar_texto_horizontal(Font fuente, const char *texto, float tamanio_fuente, float espaciado, float posision_y);
 void pantalla_desarrollador(Font fuente1, Font fuente2, Font fuente3);
 void secciones_visuales_encabezados();
-void secciones_visuales_musica(Cancion *playlist, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo, Font fuente1, Font fuente2);
+void secciones_visuales_musica(CancionPTR *playlist, CancionPTR actual, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo, Font fuente1, Font fuente2);
 void secciones_visuales_video();
 void configurar_botones();
 int formulario(CancionPTR *playlist, int total_canciones, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3);
@@ -124,16 +122,129 @@ void secciones_visuales_encabezados()
     DrawRectangleRoundedLinesEx((Rectangle){8, ALTO_PANTALLA * 0.85 + 8, ANCHO_PANTALLA - 16, ALTO_PANTALLA * 0.135}, REDONDEZ, SEGMENTOS, 8, color_blanco);
 }
 //**************************************************************************************************************************
-/*void secciones_visuales_musica()
+void secciones_visuales_musica(CancionPTR *playlist, CancionPTR actual, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo, Font fuente1, Font fuente2)
 {
+    const int tabla_x = ANCHO_PANTALLA * 0.42;
+    const int tabla_y = ALTO_PANTALLA * 0.16;
+    const int ancho_columna = ANCHO_PANTALLA * 0.57;
+    const int altura_fila = ALTO_PANTALLA * 0.128;
+
+    static CancionPTR ultima_cancion_seleccionada = NULL;
+
     DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.01, ALTO_PANTALLA * 0.16, ANCHO_PANTALLA * 0.4, ALTO_PANTALLA * 0.68}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
 
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.42, ALTO_PANTALLA * 0.16, ANCHO_PANTALLA * 0.57, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.42, ALTO_PANTALLA * 0.298, ANCHO_PANTALLA * 0.57, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.42, ALTO_PANTALLA * 0.438, ANCHO_PANTALLA * 0.57, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.42, ALTO_PANTALLA * 0.574, ANCHO_PANTALLA * 0.57, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.42, ALTO_PANTALLA * 0.712, ANCHO_PANTALLA * 0.57, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
-}*/
+    if (playlist == NULL)
+    {
+        DrawTextEx(fuente2, "No hay canciones para mostrar", (Vector2){550, 200}, TAMANIO_FUENTE_TER, 0, RED);
+        return;
+    }
+
+    // Obtener el puntero al primer nodo visible
+    //CancionPTR actual = playlist;
+    for (int i = 0; i < posision_scroll.inicio; i++)
+    {
+        if (actual == NULL)
+            break;
+        actual = actual->siguiente;
+    }
+
+    // Dibujar filas de canciones visibles con desplazamiento suave
+    for (int i = 0; i < CANCIONES_VISIBLES; i++)
+    {
+        if (actual == NULL)
+            break;
+
+        int indice = posision_scroll.inicio + i;
+        int y = tabla_y + i * altura_fila;
+
+        // Solo dibujar si está dentro del área visible
+        if (y < tabla_y - altura_fila || y > tabla_y + (CANCIONES_VISIBLES * altura_fila))
+        {
+            actual = actual->siguiente;
+            continue;
+        }
+
+        // Resaltar la canción seleccionada
+        if (indice == cancion_seleccionada)
+        {
+            DrawRectangleRounded((Rectangle){tabla_x, y, ancho_columna - 6, altura_fila - 6}, REDONDEZ, SEGMENTOS, color_verde);
+            ultima_cancion_seleccionada = actual; // Guardar la canción seleccionada
+        }
+        else
+        {
+            DrawRectangleRounded((Rectangle){tabla_x, y, ancho_columna - 6, altura_fila - 6}, REDONDEZ, SEGMENTOS, color_fondo);
+        }
+
+        // Dibujar texto del nodo actual
+        if (indice == cancion_seleccionada)
+        {
+            DrawTextEx(fuente2, actual->titulo, (Vector2){tabla_x + 35, y + 30}, TAMANIO_FUENTE_TER, 0, WHITE);
+            DrawTextEx(fuente2, actual->artista, (Vector2){tabla_x + 35, y + 60}, TAMANIO_FUENTE_TER, 0, WHITE);
+            DrawTextEx(fuente2, actual->duracion, (Vector2){tabla_x + 980, y + 45}, TAMANIO_FUENTE_TER, 0, WHITE);
+        }
+        else
+        {
+            DrawTextEx(fuente2, actual->titulo, (Vector2){tabla_x + 35, y + 30}, TAMANIO_FUENTE_TER, 0, color_verde);
+            DrawTextEx(fuente2, actual->artista, (Vector2){tabla_x + 35, y + 60}, TAMANIO_FUENTE_TER, 0, color_verde);
+            DrawTextEx(fuente2, actual->duracion, (Vector2){tabla_x + 980, y + 45}, TAMANIO_FUENTE_TER, 0, color_verde);
+        }
+
+        // Avanzar al siguiente nodo de la lista
+        if (actual->siguiente != NULL && actual->siguiente != (CancionPTR)playlist)
+        {
+            actual = actual->siguiente;
+        }
+        else
+        {
+            // Si es el último nodo de una lista no circular, salir del loop
+            break;
+        }
+    }
+
+    // Manejo de la canción seleccionada (textura y audio)
+    if (ultima_cancion_seleccionada != NULL)
+    {
+        // Cargar textura solo si es diferente a la actual
+        if (strcmp(ultima_cancion_seleccionada->imagen, imagen_actual.ruta) != 0)
+        {
+            if (imagen_actual.cargada)
+            {
+                UnloadTexture(imagen_actual.imagen);
+            }
+            imagen_actual.imagen = LoadTexture(ultima_cancion_seleccionada->imagen);
+            imagen_actual.cargada = true;
+            strcpy(imagen_actual.ruta, ultima_cancion_seleccionada->imagen);
+            SetTextureFilter(imagen_actual.imagen, TEXTURE_FILTER_BILINEAR);
+        }
+        // Dibujar la textura de la portada
+        if (imagen_actual.cargada)
+        {
+            DrawTexturePro(imagen_actual.imagen, (Rectangle){0, 0, imagen_actual.imagen.width, imagen_actual.imagen.height}, (Rectangle){145, 160, 250, 250}, (Vector2){0, 0}, 0, WHITE);
+        }
+        // Manejo de audio
+        if (strcmp(ultima_cancion_seleccionada->audio, audio_actual.ruta) != 0)
+        {
+            if (audio_actual.cargada)
+            {
+                StopMusicStream(audio_actual.musica);
+                UnloadMusicStream(audio_actual.musica);
+            }
+            audio_actual.musica = LoadMusicStream(ultima_cancion_seleccionada->audio);
+            audio_actual.cargada = true;
+            strcpy(audio_actual.ruta, ultima_cancion_seleccionada->audio);
+            audio_actual.duracion = GetMusicTimeLength(audio_actual.musica);
+            audio_actual.tiempo_actual = 0;
+        }
+
+        // Dibujar información de la canción seleccionada
+        DrawTextEx(fuente1, "NOMBRE DE LA CANCION:", (Vector2){60, 440}, TAMANIO_FUENTE_QUI, 0, color_verde);
+        DrawTextEx(fuente2, ultima_cancion_seleccionada->titulo, (Vector2){60, 470}, TAMANIO_FUENTE_SEC, 0, color_verde);
+        DrawTextEx(fuente1, "NOMBRE DEL ARTISTA:", (Vector2){60, 520}, TAMANIO_FUENTE_QUI, 0, color_verde);
+        DrawTextEx(fuente2, ultima_cancion_seleccionada->artista, (Vector2){60, 550}, TAMANIO_FUENTE_SEC, 0, color_verde);
+        DrawTextEx(fuente1, "DURACION", (Vector2){60, 600}, TAMANIO_FUENTE_QUI, 0, color_verde);
+        DrawTextEx(fuente2, ultima_cancion_seleccionada->duracion, (Vector2){60, 630}, TAMANIO_FUENTE_SEC, 0, color_verde);
+    }
+}
 //**************************************************************************************************************************
 void secciones_visuales_video()
 {
@@ -705,130 +816,6 @@ int formulario(CancionPTR *playlist, int total_canciones, Texture2D fondo, Font 
     return 0;
 }
 //**************************************************************************************************************************
-void secciones_visuales_musica(Cancion *playlist, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo, Font fuente1, Font fuente2)
-{
-    const int tabla_x = ANCHO_PANTALLA * 0.42;
-    const int tabla_y = ALTO_PANTALLA * 0.16;
-    const int ancho_columna = ANCHO_PANTALLA * 0.57;
-    const int altura_fila = ALTO_PANTALLA * 0.128;
-
-    static Cancion *ultima_cancion_seleccionada = NULL;
-
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.01, ALTO_PANTALLA * 0.16, ANCHO_PANTALLA * 0.4, ALTO_PANTALLA * 0.68}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
-
-    if (playlist == NULL)
-    {
-        DrawTextEx(fuente2, "No hay canciones para mostrar", (Vector2){550, 200}, TAMANIO_FUENTE_TER, 0, RED);
-        return;
-    }
-
-    // Obtener el puntero al primer nodo visible
-    Cancion *actual = playlist;
-    for (int i = 0; i < posision_scroll.inicio; i++)
-    {
-        if (actual == NULL)
-            break;
-        actual = actual->siguiente;
-    }
-
-    // Dibujar filas de canciones visibles con desplazamiento suave
-    for (int i = 0; i < CANCIONES_VISIBLES; i++)
-    {
-        if (actual == NULL)
-            break;
-
-        int indice = posision_scroll.inicio + i;
-        int y = tabla_y + i * altura_fila;
-
-        // Solo dibujar si está dentro del área visible
-        if (y < tabla_y - altura_fila || y > tabla_y + (CANCIONES_VISIBLES * altura_fila))
-        {
-            actual = actual->siguiente;
-            continue;
-        }
-
-        // Resaltar la canción seleccionada
-        if (indice == cancion_seleccionada)
-        {
-            DrawRectangleRounded((Rectangle){tabla_x, y, ancho_columna - 6, altura_fila - 6}, REDONDEZ, SEGMENTOS, color_verde);
-            ultima_cancion_seleccionada = actual; // Guardar la canción seleccionada
-        }
-        else
-        {
-            DrawRectangleRounded((Rectangle){tabla_x, y, ancho_columna - 6, altura_fila - 6}, REDONDEZ, SEGMENTOS, color_fondo);
-        }
-
-        // Dibujar texto del nodo actual
-        if (indice == cancion_seleccionada)
-        {
-            DrawTextEx(fuente2, actual->titulo, (Vector2){tabla_x + 35, y + 30}, TAMANIO_FUENTE_TER, 0, WHITE);
-            DrawTextEx(fuente2, actual->artista, (Vector2){tabla_x + 35, y + 60}, TAMANIO_FUENTE_TER, 0, WHITE);
-            DrawTextEx(fuente2, actual->duracion, (Vector2){tabla_x + 980, y + 45}, TAMANIO_FUENTE_TER, 0, WHITE);
-        }
-        else
-        {
-            DrawTextEx(fuente2, actual->titulo, (Vector2){tabla_x + 35, y + 30}, TAMANIO_FUENTE_TER, 0, color_verde);
-            DrawTextEx(fuente2, actual->artista, (Vector2){tabla_x + 35, y + 60}, TAMANIO_FUENTE_TER, 0, color_verde);
-            DrawTextEx(fuente2, actual->duracion, (Vector2){tabla_x + 980, y + 45}, TAMANIO_FUENTE_TER, 0, color_verde);
-        }
-
-        // Avanzar al siguiente nodo de la lista
-        if (actual->siguiente != NULL && actual->siguiente != playlist)
-        {
-            actual = actual->siguiente;
-        }
-        else
-        {
-            // Si es el último nodo de una lista no circular, salir del loop
-            break;
-        }
-    }
-
-    // Manejo de la canción seleccionada (textura y audio)
-    if (ultima_cancion_seleccionada != NULL)
-    {
-        // Cargar textura solo si es diferente a la actual
-        if (strcmp(ultima_cancion_seleccionada->imagen, imagen_actual.ruta) != 0)
-        {
-            if (imagen_actual.cargada)
-            {
-                UnloadTexture(imagen_actual.imagen);
-            }
-            imagen_actual.imagen = LoadTexture(ultima_cancion_seleccionada->imagen);
-            imagen_actual.cargada = true;
-            strcpy(imagen_actual.ruta, ultima_cancion_seleccionada->imagen);
-            SetTextureFilter(imagen_actual.imagen, TEXTURE_FILTER_BILINEAR);
-        }
-        // Dibujar la textura de la portada
-        if (imagen_actual.cargada)
-        {
-            DrawTexturePro(imagen_actual.imagen, (Rectangle){0, 0, imagen_actual.imagen.width, imagen_actual.imagen.height}, (Rectangle){145, 160, 250, 250}, (Vector2){0, 0}, 0, WHITE);
-        }
-        // Manejo de audio
-        if (strcmp(ultima_cancion_seleccionada->audio, audio_actual.ruta) != 0)
-        {
-            if (audio_actual.cargada)
-            {
-                StopMusicStream(audio_actual.musica);
-                UnloadMusicStream(audio_actual.musica);
-            }
-            audio_actual.musica = LoadMusicStream(ultima_cancion_seleccionada->audio);
-            audio_actual.cargada = true;
-            strcpy(audio_actual.ruta, ultima_cancion_seleccionada->audio);
-            audio_actual.duracion = GetMusicTimeLength(audio_actual.musica);
-            audio_actual.tiempo_actual = 0;
-        }
-
-        // Dibujar información de la canción seleccionada
-        DrawTextEx(fuente1, "NOMBRE DE LA CANCION:", (Vector2){60, 440}, TAMANIO_FUENTE_QUI, 0, color_verde);
-        DrawTextEx(fuente2, ultima_cancion_seleccionada->titulo, (Vector2){60, 470}, TAMANIO_FUENTE_SEC, 0, color_verde);
-        DrawTextEx(fuente1, "NOMBRE DEL ARTISTA:", (Vector2){60, 520}, TAMANIO_FUENTE_QUI, 0, color_verde);
-        DrawTextEx(fuente2, ultima_cancion_seleccionada->artista, (Vector2){60, 550}, TAMANIO_FUENTE_SEC, 0, color_verde);
-        DrawTextEx(fuente1, "DURACION", (Vector2){60, 600}, TAMANIO_FUENTE_QUI, 0, color_verde);
-        DrawTextEx(fuente2, ultima_cancion_seleccionada->duracion, (Vector2){60, 630}, TAMANIO_FUENTE_SEC, 0, color_verde);
-    }
-}
-//**************************************************************************************************************************
 void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproduciendo)
 {
     if (!audio->cargada)
@@ -869,45 +856,5 @@ void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproducie
 
     DrawTextEx(fuente, tiempo_actual_str, (Vector2){barra_x - 50, barra_y}, TAMANIO_FUENTE_CUA, 0, color_verde);
     DrawTextEx(fuente, duracion_str, (Vector2){barra_x + barra_width + 10, barra_y}, TAMANIO_FUENTE_CUA, 0, color_verde);
-}
-//**************************************************************************************************************************
-void llenar_lista_canciones(CancionPTR *playlist, int *total_canciones)
-{
-    if (*total_canciones > 0)
-    {
-        return;
-    }
-
-    // Datos de canciones
-    const char *titulos[] = {
-        "COME & GO", "DRINKIN", "FAST CAR", "FIRESTONE", "FRIDAY",
-        "HISTORY", "LET IT BE ME", "LET ME GO", "LEVITATING", "LONELY",
-        "SORRY", "UNDER CONTROL", "WHAT WOULD YOU DO?", "WHERE ARE U NOW", "WOULD YOU EVER"};
-
-    const char *artistas[] = {
-        "MARSHMELLO", "JOEL CORRY", "JONAS BLUE", "KYGO", "RITON Y NIGHCRAWLERS",
-        "JOEL CORRY", "BACKSTREET BOYS", "ALESSO", "DUA LIPA", "JOEL CORRY",
-        "JOEL CORRY", "ALESSO", "JOEL CORRY", "JACK U", "SKRILLEX"};
-
-    const char *duraciones[] = {
-        "3:25", "2:29", "3:32", "4:31", "2:49",
-        "2:56", "3:44", "2:54", "3:23", "3:10",
-        "3:08", "3:04", "2:54", "4:10", "3:54"};
-
-    const char *ruta_img[] = {
-        "insertar/8.jpg", "insertar/5.jpg", "insertar/6.jpg", "insertar/7.jpg", "insertar/9.jpg",
-        "insertar/5.jpg", "insertar/2.jpg", "insertar/1.jpg", "insertar/3.jpg", "insertar/5.jpg",
-        "insertar/5.jpg", "insertar/1.jpg", "insertar/5.jpg", "insertar/4.jpg", "insertar/0.jpg"};
-
-    const char *ruta_aud[] = {
-        "insertar/Come Go.mp3", "insertar/Drinkin.mp3", "insertar/Fast Car.mp3", "insertar/Firestone.mp3", "insertar/Friday.mp3",
-        "insertar/History.mp3", "insertar/Let It Be Me.mp3", "insertar/Let Me Go.mp3", "insertar/Levitating.mp3", "insertar/Lonely.mp3",
-        "insertar/Sorry.mp3", "insertar/Under Control.mp3", "insertar/What Would You Do.mp3", "insertar/Where Are U Now.mp3", "insertar/Would You Ever.mp3"};
-
-    for (int i = 0; i < 15; i++)
-    {
-        agregar_cancion(playlist, titulos[i], artistas[i], duraciones[i], ruta_img[i], ruta_aud[i], "\0", 1);
-        (*total_canciones)++;
-    }
 }
 //**************************************************************************************************************************

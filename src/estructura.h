@@ -60,7 +60,7 @@ typedef struct
     char ruta[255];
 } Estado_Audio;
 
-typedef struct
+/*typedef struct
 {
     Texture2D frame_video;
     bool cargada;
@@ -69,7 +69,7 @@ typedef struct
     float tiempo_actual;
     char ruta[255];
     void *reproducir_video;
-} Estado_Video;
+} Estado_Video;*/
 
 typedef enum
 {
@@ -87,8 +87,10 @@ typedef enum
 #define CANCIONES_VISIBLES 5
 #define SCROLL_VELOCIDAD 20
 //**************************************************************************************************************************
-//  PORTOTIPOS
+//  VARIABLES
 //**************************************************************************************************************************
+Estado_Audio audio_actual = {0};
+Estado_Imagen imagen_actual = {0};
 //**************************************************************************************************************************
 //  PORTOTIPOS
 //**************************************************************************************************************************
@@ -145,7 +147,7 @@ CancionPTR crear_cancion()
 
     return nueva;
 }
-//******************************************************************************************************
+//**************************************************************************************************************************
 int agregar_cancion(CancionPTR *playlist, const char *titulo, const char *artista, const char *duracion, const char *ruta_imagen, const char *ruta_audio, const char *ruta_video, int insertar)
 {
     CancionPTR nodo = crear_cancion();
@@ -176,7 +178,7 @@ int agregar_cancion(CancionPTR *playlist, const char *titulo, const char *artist
 
     return 1;
 }
-//******************************************************************************************************
+//**************************************************************************************************************************
 void insertar_primero(CancionPTR nodo, CancionPTR *lista)
 {
     if (nodo == NULL)
@@ -197,7 +199,7 @@ void insertar_primero(CancionPTR nodo, CancionPTR *lista)
         *lista = nodo;
     }
 }
-//******************************************************************************************************
+//**************************************************************************************************************************
 void insertar_ultimo(CancionPTR nodo, CancionPTR *lista)
 {
     if (nodo == NULL)
@@ -223,7 +225,7 @@ void insertar_ultimo(CancionPTR nodo, CancionPTR *lista)
         nodo->anterior = aux;
     }
 }
-//******************************************************************************************************
+//**************************************************************************************************************************
 int manejar_boton_simple(Boton_Interfaz boton)
 {
     Vector2 posision_mouse = GetMousePosition();
@@ -244,7 +246,47 @@ int manejar_boton_simple(Boton_Interfaz boton)
 
     return boton_presionado;
 }
-//******************************************************************************************************
+//**************************************************************************************************************************
+void llenar_lista_canciones(CancionPTR *playlist, int *total_canciones)
+{
+    if (*total_canciones > 0)
+    {
+        return;
+    }
+
+    // Datos de canciones
+    const char *titulos[] = {
+        "COME & GO", "DRINKIN", "FAST CAR", "FIRESTONE", "FRIDAY",
+        "HISTORY", "LET IT BE ME", "LET ME GO", "LEVITATING", "LONELY",
+        "SORRY", "UNDER CONTROL", "WHAT WOULD YOU DO?", "WHERE ARE U NOW", "WOULD YOU EVER"};
+
+    const char *artistas[] = {
+        "MARSHMELLO", "JOEL CORRY", "JONAS BLUE", "KYGO", "RITON Y NIGHCRAWLERS",
+        "JOEL CORRY", "BACKSTREET BOYS", "ALESSO", "DUA LIPA", "JOEL CORRY",
+        "JOEL CORRY", "ALESSO", "JOEL CORRY", "JACK U", "SKRILLEX"};
+
+    const char *duraciones[] = {
+        "3:25", "2:29", "3:32", "4:31", "2:49",
+        "2:56", "3:44", "2:54", "3:23", "3:10",
+        "3:08", "3:04", "2:54", "4:10", "3:54"};
+
+    const char *ruta_img[] = {
+        "insertar/8.jpg", "insertar/5.jpg", "insertar/6.jpg", "insertar/7.jpg", "insertar/9.jpg",
+        "insertar/5.jpg", "insertar/2.jpg", "insertar/1.jpg", "insertar/3.jpg", "insertar/5.jpg",
+        "insertar/5.jpg", "insertar/1.jpg", "insertar/5.jpg", "insertar/4.jpg", "insertar/0.jpg"};
+
+    const char *ruta_aud[] = {
+        "insertar/Come Go.mp3", "insertar/Drinkin.mp3", "insertar/Fast Car.mp3", "insertar/Firestone.mp3", "insertar/Friday.mp3",
+        "insertar/History.mp3", "insertar/Let It Be Me.mp3", "insertar/Let Me Go.mp3", "insertar/Levitating.mp3", "insertar/Lonely.mp3",
+        "insertar/Sorry.mp3", "insertar/Under Control.mp3", "insertar/What Would You Do.mp3", "insertar/Where Are U Now.mp3", "insertar/Would You Ever.mp3"};
+
+    for (int i = 0; i < 15; i++)
+    {
+        agregar_cancion(playlist, titulos[i], artistas[i], duraciones[i], ruta_img[i], ruta_aud[i], "\0", 1);
+        (*total_canciones)++;
+    }
+}
+//**************************************************************************************************************************
 int obtener_indice_cancion(CancionPTR playlist, CancionPTR cancion_actual, int total_canciones)
 {
     if (playlist == NULL || cancion_actual == NULL)
@@ -264,7 +306,7 @@ int obtener_indice_cancion(CancionPTR playlist, CancionPTR cancion_actual, int t
     
     return 0;
 }
-//******************************************************************************************************
+//**************************************************************************************************************************
 int calcular_inicio_para_centrar(int cancion_seleccionada)
 {
     int inicio = cancion_seleccionada - CANCIONES_VISIBLES / 2;
@@ -272,8 +314,7 @@ int calcular_inicio_para_centrar(int cancion_seleccionada)
         inicio = 0;
     return inicio;
 }
-//******************************************************************************************************
-
+//**************************************************************************************************************************
 void actualizar_scroll(Estado_Scroll *scroll)
 {
     if (scroll->scrolling)
@@ -311,9 +352,44 @@ void actualizar_scroll(Estado_Scroll *scroll)
         }
     }
 }
-//******************************************************************************************************
+//**************************************************************************************************************************
+void cambiar_cancion_actual(CancionPTR *cancion_actual, CancionPTR nueva_cancion, bool *esta_reproduciendo)
+{
+    if (*cancion_actual != nueva_cancion)
+    {
+        // Detener y liberar recursos de la canción actual
+        if (audio_actual.cargada)
+        {
+            StopMusicStream(audio_actual.musica);
+            UnloadMusicStream(audio_actual.musica);
+            audio_actual.cargada = false;
+        }
+        if (imagen_actual.cargada)
+        {
+            UnloadTexture(imagen_actual.imagen);
+            imagen_actual.cargada = false;
+        }
 
-
+        // Actualizar el puntero de la canción
+        *cancion_actual = nueva_cancion;
+        *esta_reproduciendo = true;
+    }
+}
+//**************************************************************************************************************************
+CancionPTR siguiente_cancion(CancionPTR actual)
+{
+    if (actual == NULL)
+        return NULL;
+    return actual->siguiente;
+}
+//**************************************************************************************************************************
+CancionPTR anterior_cancion(CancionPTR actual)
+{
+    if (actual == NULL)
+        return NULL;
+    return actual->anterior;
+}
+//**************************************************************************************************************************
 // PRUEBA DE QUE SI SE LLENA LA PLAYLIST
 void mostrarPlaylist(CancionPTR lista)
 {

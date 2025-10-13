@@ -18,7 +18,7 @@ int main()
 
     int total_canciones = 0;
 
-    CancionPTR playlist = crear_cancion();
+    CancionPTR playlist = NULL;
     CancionPTR cancion_actual = playlist;
     llenar_lista_canciones(&playlist, &total_canciones);
 
@@ -57,16 +57,134 @@ int main()
         actualizar_scroll(&scroll);
         Vector2 posicion_mouse = GetMousePosition();
 
-       
+        // Lógica de selección con el mouse
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !scroll.scrolling)
+        {
+            const int tabla_y = 150;
+            const int fila_altura = 80;
+
+            if (posicion_mouse.x >= 50 && posicion_mouse.x <= 750 &&
+                posicion_mouse.y >= tabla_y && posicion_mouse.y <= tabla_y + (CANCIONES_VISIBLES * fila_altura))
+            {
+                int fila = (posicion_mouse.y - tabla_y) / fila_altura;
+                int idx = scroll.inicio + fila;
+
+                if (idx >= 0 && idx < total_canciones)
+                {
+                    // Navegar a la canción seleccionada
+                    Cancion *nueva_cancion = playlist;
+                    for (int i = 0; i < idx; i++)
+                    {
+                        nueva_cancion = nueva_cancion->siguiente;
+                    }
+
+                    cambiar_cancion_actual(&cancion_actual, nueva_cancion, &esta_reproduciendo);
+
+                    // Sincronizar el índice de la UI
+                    cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
+
+                    // Actualizar scroll
+                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada);
+                    if (nuevo_inicio != scroll.inicio)
+                    {
+                        scroll.target_inicio = nuevo_inicio;
+                        scroll.scrolling = true;
+                    }
+                }
+            }
+        }
+
+        // Navegación con teclado o botones
+        if (!scroll.scrolling)
+        {
+            if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_DOWN) || manejar_boton_simple(boton_adelantar))
+            {
+                if (total_canciones > 0)
+                {
+                    CancionPTR siguiente = siguiente_cancion(cancion_actual);
+                    cambiar_cancion_actual(&cancion_actual, siguiente, &esta_reproduciendo);
+                    cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
+
+                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada);
+                    if (nuevo_inicio != scroll.inicio)
+                    {
+                        scroll.target_inicio = nuevo_inicio;
+                        scroll.scrolling = true;
+                    }
+                }
+            }
+
+            if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_UP) || manejar_boton_simple(boton_retroceder))
+            {
+                if (total_canciones > 0)
+                {
+                    CancionPTR anterior = anterior_cancion(cancion_actual);
+                    cambiar_cancion_actual(&cancion_actual, anterior, &esta_reproduciendo);
+                    cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
+
+                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada);
+                    if (nuevo_inicio != scroll.inicio)
+                    {
+                        scroll.target_inicio = nuevo_inicio;
+                        scroll.scrolling = true;
+                    }
+                }
+            }
+
+            // Scroll rápido con PageUp/PageDown
+            if (IsKeyPressed(KEY_PAGE_DOWN))
+            {
+                for (int i = 0; i < CANCIONES_VISIBLES; i++)
+                {
+                    cancion_actual = siguiente_cancion(cancion_actual);
+                }
+                cambiar_cancion_actual(&cancion_actual, cancion_actual, &esta_reproduciendo);
+                cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
+                int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada);
+                scroll.target_inicio = nuevo_inicio;
+                scroll.scrolling = true;
+            }
+
+            if (IsKeyPressed(KEY_PAGE_UP))
+            {
+                for (int i = 0; i < CANCIONES_VISIBLES; i++)
+                {
+                    cancion_actual = anterior_cancion(cancion_actual);
+                }
+                cambiar_cancion_actual(&cancion_actual, cancion_actual, &esta_reproduciendo);
+                cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
+                int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada);
+                scroll.target_inicio = nuevo_inicio;
+                scroll.scrolling = true;
+            }
+
+            // Ir al inicio/fin con Home/End
+            if (IsKeyPressed(KEY_HOME))
+            {
+                cambiar_cancion_actual(&cancion_actual, playlist, &esta_reproduciendo);
+                cancion_seleccionada = 0;
+                scroll.target_inicio = 0;
+                scroll.scrolling = true;
+            }
+
+            /*if (IsKeyPressed(KEY_END))
+            {
+                cambiar_cancion_actual(&cancion_actual, ultimo_nodo, &esta_reproduciendo);
+                cancion_seleccionada = total_canciones - 1;
+                scroll.target_inicio = total_canciones - CANCIONES_VISIBLES;
+                scroll.scrolling = true;
+            }*/
+        }
 
         BeginDrawing();
-        // ClearBackground(RAYWHITE);
+        ClearBackground(RAYWHITE);
 
-        /*if (!pantalla_desarrollador_activa)
-         {
-             pantalla_desarrollador(fuente_titulo, fuente1, fuente2);
-             pantalla_desarrollador_activa = true;
-         }*/
+        if (!pantalla_desarrollador_activa)
+        {
+            pantalla_desarrollador(fuente_titulo, fuente1, fuente2);
+            pantalla_desarrollador_activa = true;
+            continue;
+        }
 
         float escala = fmaxf((float)ANCHO_PANTALLA / ANCHO_FONDO, (float)ALTO_PANTALLA / ALTO_FONDO);
         DrawTexturePro(fondo, (Rectangle){0, 0, ANCHO_FONDO, ALTO_FONDO}, (Rectangle){(ANCHO_PANTALLA - ANCHO_FONDO * escala) * 0.5f, (ALTO_PANTALLA - ALTO_FONDO * escala) * 0.5f, ANCHO_FONDO * escala, ALTO_FONDO * escala}, (Vector2){0, 0}, 0.0f, WHITE);
@@ -160,7 +278,7 @@ int main()
         }
         else
         {
-            secciones_visuales_musica(playlist, total_canciones, scroll, cancion_seleccionada, esta_reproduciendo, fuente1, fuente2);
+            secciones_visuales_musica(&playlist, cancion_actual, total_canciones, scroll, cancion_seleccionada, esta_reproduciendo, fuente1, fuente2);
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4), ALTO_PANTALLA * 0.17, (ANCHO_PANTALLA * 0.68) / 3, 50}, REDONDEZ + 0.4, SEGMENTOS, color_verde);
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4) + 5, (ALTO_PANTALLA * 0.17) + 5, ((ANCHO_PANTALLA * 0.68) / 6) - 10, 40}, REDONDEZ + 0.4, SEGMENTOS, color_blanco);
             DrawTextEx(fuente2, "VIDEO", (Vector2){485, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_blanco);
