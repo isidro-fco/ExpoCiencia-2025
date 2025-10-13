@@ -71,11 +71,24 @@ typedef struct
     void *reproducir_video;
 } Estado_Video;
 
+typedef enum
+{
+    SECCION_NINGUNA = 0,
+    SECCION_SUPERIOR,
+    SECCION_INFERIOR,
+    SECCION_IZQUIERDA,
+    SECCION_DERECHA
+} Seccion_Pantalla;
 //**************************************************************************************************************************
 //  CONSTANTES
 //**************************************************************************************************************************
 #define ANCHO_PANTALLA 1920
 #define ALTO_PANTALLA 1080
+#define CANCIONES_VISIBLES 5
+#define SCROLL_VELOCIDAD 20
+//**************************************************************************************************************************
+//  PORTOTIPOS
+//**************************************************************************************************************************
 //**************************************************************************************************************************
 //  PORTOTIPOS
 //**************************************************************************************************************************
@@ -85,9 +98,14 @@ int agregar_cancion(CancionPTR *playlist, const char *titulo, const char *artist
 void insertar_primero(CancionPTR nodo, CancionPTR *lista);
 void insertar_ultimo(CancionPTR nodo, CancionPTR *lista);
 int manejar_boton_simple(Boton_Interfaz boton);
+void llenar_lista_canciones(CancionPTR *playlist, int *total_canciones);
+int obtener_indice_cancion(CancionPTR playlist, CancionPTR cancion_actual, int total_canciones);
+void actualizar_scroll(Estado_Scroll *scroll);
+int calcular_inicio_para_centrar(int cancion_seleccionada);
 
 void mostrarPlaylist(CancionPTR lista);
 void mostrarCancion(CancionPTR cancion);
+//**************************************************************************************************************************
 //**************************************************************************************************************************
 //  FUNCIONES DE ESTRUCTURA
 //**************************************************************************************************************************
@@ -227,6 +245,75 @@ int manejar_boton_simple(Boton_Interfaz boton)
     return boton_presionado;
 }
 //******************************************************************************************************
+int obtener_indice_cancion(CancionPTR playlist, CancionPTR cancion_actual, int total_canciones)
+{
+    if (playlist == NULL || cancion_actual == NULL)
+        return 0;
+    
+    CancionPTR actual = playlist;
+    int indice = 0;
+    
+    while (actual != NULL && indice < total_canciones)
+    {
+        if (actual == cancion_actual)
+            return indice;
+        
+        actual = actual->siguiente;
+        indice++;
+    }
+    
+    return 0;
+}
+//******************************************************************************************************
+int calcular_inicio_para_centrar(int cancion_seleccionada)
+{
+    int inicio = cancion_seleccionada - CANCIONES_VISIBLES / 2;
+    if (inicio < 0)
+        inicio = 0;
+    return inicio;
+}
+//******************************************************************************************************
+
+void actualizar_scroll(Estado_Scroll *scroll)
+{
+    if (scroll->scrolling)
+    {
+        // Si hemos llegado al objetivo
+        if (scroll->inicio == scroll->target_inicio && scroll->desplazamiento == 0)
+        {
+            scroll->scrolling = false;
+            return;
+        }
+
+        // Calcular dirección y distancia
+        int direccion = (scroll->target_inicio > scroll->inicio) ? 1 : -1;
+
+        // Mover el desplazamiento
+        scroll->desplazamiento += SCROLL_VELOCIDAD * direccion;
+
+        // Si el desplazamiento supera el tamaño de una fila, cambiar el índice
+        if (abs(scroll->desplazamiento) >= 80)
+        { // 80 es la altura de cada fila
+            scroll->inicio += direccion;
+            scroll->desplazamiento -= 80 * direccion;
+        }
+
+        // Si llegamos al índice objetivo, ajustar para terminar exactamente
+        if (scroll->inicio == scroll->target_inicio)
+        {
+            if (scroll->desplazamiento != 0)
+            {
+                // Ajustar el desplazamiento para terminar en 0
+                scroll->desplazamiento += (scroll->desplazamiento > 0) ? -SCROLL_VELOCIDAD : SCROLL_VELOCIDAD;
+                if (abs(scroll->desplazamiento) < SCROLL_VELOCIDAD)
+                    scroll->desplazamiento = 0;
+            }
+        }
+    }
+}
+//******************************************************************************************************
+
+
 // PRUEBA DE QUE SI SE LLENA LA PLAYLIST
 void mostrarPlaylist(CancionPTR lista)
 {

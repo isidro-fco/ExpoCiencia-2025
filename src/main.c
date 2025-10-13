@@ -12,12 +12,25 @@ int main()
 
     bool multimedia = false;
     bool esta_reproduciendo = true;
+    bool esta_silenciado = false;
+    bool mostrando_filtro_anterior = false;
     bool mutear = false;
 
+    int total_canciones = 0;
+
     CancionPTR playlist = crear_cancion();
+    CancionPTR cancion_actual = playlist;
+    llenar_lista_canciones(&playlist, &total_canciones);
+
+    int cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
 
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
-    InitWindow(ANCHO_PANTALLA, ALTO_PANTALLA, "Pantalla Completa");
+    InitWindow(ANCHO_PANTALLA, ALTO_PANTALLA, "CimaBits 2025");
+
+    Estado_Scroll scroll = {0, 0, 0, false};
+
+    scroll.inicio = calcular_inicio_para_centrar(cancion_seleccionada);
+    scroll.target_inicio = scroll.inicio;
 
     Texture2D fondo = LoadTexture("assets/fondo1.jpg");
     SetTextureFilter(fondo, TEXTURE_FILTER_BILINEAR);
@@ -30,6 +43,9 @@ int main()
     SetTextureFilter(fuente1.texture, TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(fuente2.texture, TEXTURE_FILTER_BILINEAR);
 
+    Seccion_Pantalla seccion_actual = SECCION_NINGUNA;
+    Seccion_Pantalla Seccion_activa = SECCION_NINGUNA;
+
     configurar_botones();
 
     SetTargetFPS(60);
@@ -38,24 +54,10 @@ int main()
 
     while (!WindowShouldClose())
     {
+        actualizar_scroll(&scroll);
         Vector2 posicion_mouse = GetMousePosition();
 
-        if (mutear)
-        {
-            if (manejar_boton_simple(boton_activar_volumen))
-            {
-                mutear = false;
-                SetMasterVolume(0.0f);
-            }
-        }
-        else
-        {
-            if (manejar_boton_simple(boton_silenciar_volumen))
-            {
-                mutear = true;
-                SetMasterVolume(0.5f);
-            }
-        }
+       
 
         BeginDrawing();
         // ClearBackground(RAYWHITE);
@@ -134,7 +136,7 @@ int main()
             // Dibujar ambos botones normalmente
             if (manejar_boton_simple(boton_agregar))
             {
-                formulario(&playlist, fondo, fuente_titulo, fuente1, fuente2);
+                formulario(&playlist, total_canciones, fondo, fuente_titulo, fuente1, fuente2);
             }
 
             if (manejar_boton_simple(boton_buscar) || IsKeyPressed(KEY_F))
@@ -158,7 +160,7 @@ int main()
         }
         else
         {
-            secciones_visuales_musica();
+            secciones_visuales_musica(playlist, total_canciones, scroll, cancion_seleccionada, esta_reproduciendo, fuente1, fuente2);
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4), ALTO_PANTALLA * 0.17, (ANCHO_PANTALLA * 0.68) / 3, 50}, REDONDEZ + 0.4, SEGMENTOS, color_verde);
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4) + 5, (ALTO_PANTALLA * 0.17) + 5, ((ANCHO_PANTALLA * 0.68) / 6) - 10, 40}, REDONDEZ + 0.4, SEGMENTOS, color_blanco);
             DrawTextEx(fuente2, "VIDEO", (Vector2){485, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_blanco);
@@ -202,11 +204,19 @@ int main()
 
         if (mutear)
         {
-            manejar_boton_simple(boton_silenciar_volumen);
+            if (manejar_boton_simple(boton_activar_volumen))
+            {
+                mutear = false;
+                SetMasterVolume(0.0f);
+            }
         }
         else
         {
-            manejar_boton_simple(boton_activar_volumen);
+            if (manejar_boton_simple(boton_silenciar_volumen))
+            {
+                mutear = true;
+                SetMasterVolume(0.5f);
+            }
         }
 
         EndDrawing();
