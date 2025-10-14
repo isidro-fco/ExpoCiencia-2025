@@ -55,10 +55,11 @@ Vector2 centrar_texto_horizontal(Font fuente, const char *texto, float tamanio_f
 void pantalla_desarrollador(Font fuente1, Font fuente2, Font fuente3);
 void secciones_visuales_encabezados();
 void secciones_visuales_musica(CancionPTR *playlist, CancionPTR actual, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo, Font fuente1, Font fuente2);
-void secciones_visuales_video();
+void dibujar_imagen(CancionPTR visibles, Rectangle dest);
+void el_descargador_de_imagenes(CancionPTR playlist);
+void secciones_visuales_video(CancionPTR *playlist, CancionPTR actual, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo, Font fuente1, Font fuente2);
 void configurar_botones();
 int formulario(CancionPTR *playlist, int total_canciones, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3);
-// void dibujar_tabla_canciones(Font fuente1, Font fuente2, Cancion *playlist, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo);
 void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproduciendo);
 
 //**************************************************************************************************************************
@@ -176,9 +177,11 @@ void secciones_visuales_musica(CancionPTR *playlist, CancionPTR actual, int tota
         }
 
         // Dibujar texto
+        int imagen_tamanio = 100;
+        dibujar_imagen(visible, (Rectangle){tabla_x + 35, y + 20, imagen_tamanio, imagen_tamanio});
         Color texto_color = (indice == cancion_seleccionada) ? WHITE : color_verde;
-        DrawTextEx(fuente2, visible->titulo, (Vector2){tabla_x + 35, y + 30}, TAMANIO_FUENTE_TER, 0, texto_color);
-        DrawTextEx(fuente2, visible->artista, (Vector2){tabla_x + 35, y + 60}, TAMANIO_FUENTE_TER, 0, texto_color);
+        DrawTextEx(fuente2, visible->titulo, (Vector2){tabla_x + 60 + imagen_tamanio, y + 30}, TAMANIO_FUENTE_TER, 0, texto_color);
+        DrawTextEx(fuente2, visible->artista, (Vector2){tabla_x + 60 + imagen_tamanio, y + 60}, TAMANIO_FUENTE_TER, 0, texto_color);
         DrawTextEx(fuente2, visible->duracion, (Vector2){tabla_x + 980, y + 45}, TAMANIO_FUENTE_TER, 0, texto_color);
 
         // Avanzar al siguiente nodo
@@ -206,7 +209,7 @@ void secciones_visuales_musica(CancionPTR *playlist, CancionPTR actual, int tota
         // Dibujar la textura de la portada
         if (imagen_actual.cargada)
         {
-            DrawTexturePro(imagen_actual.imagen, (Rectangle){0, 0, imagen_actual.imagen.width, imagen_actual.imagen.height}, (Rectangle){145, 160, 250, 250}, (Vector2){0, 0}, 0, WHITE);
+            DrawTexturePro(imagen_actual.imagen, (Rectangle){0, 0, imagen_actual.imagen.width, imagen_actual.imagen.height}, (Rectangle){(ANCHO_PANTALLA * 0.2 + ANCHO_PANTALLA * 0.01) - 125, ALTO_PANTALLA * 0.23, 250, 250}, (Vector2){0, 0}, 0, WHITE);
         }
         // Manejo de audio
         if (strcmp(ultima_cancion_seleccionada->audio, audio_actual.ruta) != 0)
@@ -224,24 +227,115 @@ void secciones_visuales_musica(CancionPTR *playlist, CancionPTR actual, int tota
         }
 
         // Dibujar información de la canción seleccionada
-        DrawTextEx(fuente1, "NOMBRE DE LA CANCION:", (Vector2){60, 440}, TAMANIO_FUENTE_QUI, 0, color_verde);
-        DrawTextEx(fuente2, ultima_cancion_seleccionada->titulo, (Vector2){60, 470}, TAMANIO_FUENTE_SEC, 0, color_verde);
-        DrawTextEx(fuente1, "NOMBRE DEL ARTISTA:", (Vector2){60, 520}, TAMANIO_FUENTE_QUI, 0, color_verde);
-        DrawTextEx(fuente2, ultima_cancion_seleccionada->artista, (Vector2){60, 550}, TAMANIO_FUENTE_SEC, 0, color_verde);
-        DrawTextEx(fuente1, "DURACION", (Vector2){60, 600}, TAMANIO_FUENTE_QUI, 0, color_verde);
-        DrawTextEx(fuente2, ultima_cancion_seleccionada->duracion, (Vector2){60, 630}, TAMANIO_FUENTE_SEC, 0, color_verde);
+        DrawTextEx(fuente1, "NOMBRE DE LA CANCION:", (Vector2){ANCHO_PANTALLA * 0.04, 540}, TAMANIO_FUENTE_CUA, 0, color_verde_claro);
+        DrawTextEx(fuente2, ultima_cancion_seleccionada->titulo, (Vector2){ANCHO_PANTALLA * 0.04, 570}, TAMANIO_FUENTE_SEC, 0, color_verde);
+        DrawTextEx(fuente1, "NOMBRE DEL ARTISTA:", (Vector2){ANCHO_PANTALLA * 0.04, 620}, TAMANIO_FUENTE_CUA, 0, color_verde_claro);
+        DrawTextEx(fuente2, ultima_cancion_seleccionada->artista, (Vector2){ANCHO_PANTALLA * 0.04, 650}, TAMANIO_FUENTE_SEC, 0, color_verde);
+        DrawTextEx(fuente1, "DURACION", (Vector2){ANCHO_PANTALLA * 0.04, 700}, TAMANIO_FUENTE_CUA, 0, color_verde_claro);
+        DrawTextEx(fuente2, ultima_cancion_seleccionada->duracion, (Vector2){ANCHO_PANTALLA * 0.04, 730}, TAMANIO_FUENTE_SEC, 0, color_verde);
     }
 }
 //**************************************************************************************************************************
-void secciones_visuales_video()
+void dibujar_imagen(CancionPTR visibles, Rectangle dest)
 {
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.01, ALTO_PANTALLA * 0.16, ANCHO_PANTALLA * 0.68, ALTO_PANTALLA * 0.68}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
+    if (visibles == NULL || visibles->imagen[0] == '\0')
+    {
+        return;
+    }
 
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.7, ALTO_PANTALLA * 0.16, ANCHO_PANTALLA * 0.29, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.7, ALTO_PANTALLA * 0.298, ANCHO_PANTALLA * 0.29, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.7, ALTO_PANTALLA * 0.438, ANCHO_PANTALLA * 0.29, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.7, ALTO_PANTALLA * 0.574, ANCHO_PANTALLA * 0.29, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
-    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.7, ALTO_PANTALLA * 0.712, ANCHO_PANTALLA * 0.29, ALTO_PANTALLA * 0.128}, REDONDEZ - 0.3, SEGMENTOS, color_fondo);
+    Texture2D textura = obtener_textura(visibles->imagen);
+
+    if (textura.id > 0)
+    {
+        DrawTexturePro(textura,
+                       (Rectangle){0, 0, textura.width, textura.height},
+                       dest, (Vector2){0, 0}, 0, WHITE);
+    }
+}
+//**************************************************************************************************************************
+void el_descargador_de_imagenes(CancionPTR playlist)
+{
+    for (int i = 0; i < num_texturas_cargadas; i++)
+    {
+        if (cache_texturas[i].cargada)
+        {
+            UnloadTexture(cache_texturas[i].imagen);
+        }
+    }
+    num_texturas_cargadas = 0;
+
+    while (playlist != NULL)
+    {
+        playlist = playlist->siguiente;
+    }
+}
+//**************************************************************************************************************************
+void secciones_visuales_video(CancionPTR *playlist, CancionPTR actual, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo, Font fuente1, Font fuente2)
+{
+    const float tabla_x = ANCHO_PANTALLA * 0.70;
+    const float ancho_columna = ANCHO_PANTALLA * 0.29;
+    const float contenedor_y = ALTO_PANTALLA * 0.16;
+    const float contenedor_altura = ALTO_PANTALLA * 0.68;
+    const float altura_fila = contenedor_altura / CANCIONES_VISIBLES;
+
+    static CancionPTR ultima_cancion_seleccionada = NULL;
+
+    DrawRectangleRounded((Rectangle){ANCHO_PANTALLA * 0.01f, ALTO_PANTALLA * 0.16f, ANCHO_PANTALLA * 0.68f, ALTO_PANTALLA * 0.68f}, REDONDEZ - 0.3f, SEGMENTOS, color_fondo);
+
+    if (playlist == NULL)
+    {
+        DrawTextEx(fuente2, "No hay canciones para mostrar", (Vector2){550, 200}, TAMANIO_FUENTE_TER, 0, RED);
+        return;
+    }
+
+    // Obtener el puntero al primer nodo visible
+    CancionPTR visible = *playlist;
+    for (int i = 0; i < posision_scroll.inicio; i++)
+    {
+        if (visible == NULL)
+            break;
+        visible = visible->siguiente;
+    }
+
+    // Dibujar filas de canciones visibles
+    for (int i = 0; i < CANCIONES_VISIBLES; i++)
+    {
+        if (visible == NULL)
+            break;
+
+        int indice = posision_scroll.inicio + i;
+        float y = contenedor_y + i * altura_fila;
+
+        // Solo dibujar si está dentro del área visible
+        if (y < contenedor_y - altura_fila || y > contenedor_y + (CANCIONES_VISIBLES * altura_fila))
+        {
+            actual = actual->siguiente;
+            continue;
+        }
+
+        // Resaltar la canción seleccionada
+        if (indice == cancion_seleccionada)
+        {
+            DrawRectangleRounded((Rectangle){tabla_x, y, ancho_columna - 6, altura_fila - 6}, REDONDEZ, SEGMENTOS, color_verde);
+            ultima_cancion_seleccionada = visible;
+        }
+        else
+        {
+            DrawRectangleRounded((Rectangle){tabla_x, y, ancho_columna - 6, altura_fila - 6}, REDONDEZ, SEGMENTOS, color_fondo);
+        }
+
+        // Dibujar texto
+        Color texto_color = (indice == cancion_seleccionada) ? WHITE : color_verde;
+        DrawTextEx(fuente2, visible->titulo, (Vector2){tabla_x + 35, y + 30}, TAMANIO_FUENTE_TER, 0, texto_color);
+        DrawTextEx(fuente2, visible->artista, (Vector2){tabla_x + 35, y + 60}, TAMANIO_FUENTE_TER, 0, texto_color);
+        DrawTextEx(fuente2, visible->duracion, (Vector2){tabla_x + 443, y + 45}, TAMANIO_FUENTE_TER, 0, texto_color);
+
+        // Avanzar al siguiente nodo
+        if (visible->siguiente != NULL && visible->siguiente != *playlist)
+            visible = visible->siguiente;
+        else
+            break;
+    }
 }
 //**************************************************************************************************************************
 void configurar_botones()

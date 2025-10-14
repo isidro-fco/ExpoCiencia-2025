@@ -14,6 +14,8 @@ int main()
     bool esta_reproduciendo = true;
     bool esta_silenciado = false;
     bool mostrando_filtro_anterior = false;
+    bool confirmar_eliminacion = false;
+    double tiempo_confirmacion = 0;
     bool mutear = false;
 
     int total_canciones = 0;
@@ -269,7 +271,7 @@ int main()
         // PARTE CENTRAL
         if (multimedia)
         {
-            secciones_visuales_video();
+            secciones_visuales_video(&playlist, cancion_actual, total_canciones, scroll, cancion_seleccionada, esta_reproduciendo, fuente1, fuente2);
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4), ALTO_PANTALLA * 0.17, (ANCHO_PANTALLA * 0.68) / 3, 50}, REDONDEZ + 0.4, SEGMENTOS, color_verde);
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4) * 2 + 30, (ALTO_PANTALLA * 0.17) + 5, ((ANCHO_PANTALLA * 0.68) / 6) - 10, 40}, REDONDEZ + 0.4, SEGMENTOS, color_blanco);
             DrawTextEx(fuente2, "VIDEO", (Vector2){485, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
@@ -286,10 +288,41 @@ int main()
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4) + 5, (ALTO_PANTALLA * 0.17) + 5, ((ANCHO_PANTALLA * 0.68) / 6) - 10, 40}, REDONDEZ + 0.4, SEGMENTOS, color_blanco);
             DrawTextEx(fuente2, "VIDEO", (Vector2){485, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_blanco);
             DrawTextEx(fuente2, "AUDIO", (Vector2){260, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
+            
+            // Manejo de eliminación con confirmación
             if (manejar_boton_simple(boton_eliminar) || IsKeyPressed(KEY_DELETE))
             {
-                eliminar_cancion_actual(&cancion_actual, &playlist, &total_canciones, &esta_reproduciendo);
+                if (confirmar_eliminacion && (GetTime() - tiempo_confirmacion) < 3.0)
+                {
+                    // Segunda pulsación dentro del tiempo: eliminar
+                    eliminar_cancion_actual(&cancion_actual, &playlist, &total_canciones, &esta_reproduciendo);
+                    confirmar_eliminacion = false;
+                }
+                else
+                {
+                    // Primera pulsación: activar confirmación
+                    confirmar_eliminacion = true;
+                    tiempo_confirmacion = GetTime();
+                }
             }
+
+            // Dibujar confirmación de eliminación (esto está bien)
+            if (confirmar_eliminacion && (GetTime() - tiempo_confirmacion) < 3.0)
+            {
+                DrawRectangleRounded((Rectangle){ANCHO_PANTALLA / 2 - 200, ALTO_PANTALLA / 2 - 50, 445, 100}, REDONDEZ, SEGMENTOS, color_verde);
+                DrawTextEx(fuente2, "ELIMINAR CANCION?", (Vector2){ANCHO_PANTALLA / 2 - 180, ALTO_PANTALLA / 2 - 40}, TAMANIO_FUENTE_TER, 0, color_blanco);
+                DrawTextEx(fuente2, "PULSE DE NUEVO PARA CONFIRMAR", (Vector2){ANCHO_PANTALLA / 2 - 180, ALTO_PANTALLA / 2}, TAMANIO_FUENTE_CUA, 0, color_blanco);
+
+                // Contador regresivo
+                int segundos_restantes = 3 - (int)(GetTime() - tiempo_confirmacion);
+                DrawTextEx(fuente2, TextFormat("%d", segundos_restantes), (Vector2){ANCHO_PANTALLA / 2 + 150, ALTO_PANTALLA / 2 - 40}, TAMANIO_FUENTE_TER, 0, RED);
+            }
+            else if (confirmar_eliminacion)
+            {
+                // Tiempo de confirmación expirado
+                confirmar_eliminacion = false;
+            }
+
             if (CheckCollisionPointRec(posicion_mouse, (Rectangle){((ANCHO_PANTALLA * 0.4) / 4) * 2 + 30, (ALTO_PANTALLA * 0.17) + 5, ((ANCHO_PANTALLA * 0.68) / 6) - 10, 40}) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             {
                 multimedia = true;

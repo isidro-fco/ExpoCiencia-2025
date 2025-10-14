@@ -87,11 +87,15 @@ typedef enum
 #define ALTO_PANTALLA 1080
 #define CANCIONES_VISIBLES 5
 #define SCROLL_VELOCIDAD 20
+#define MAX_TEXTURAS_CARGADAS 100
 //**************************************************************************************************************************
 //  VARIABLES
 //**************************************************************************************************************************
 Estado_Audio audio_actual = {0};
 Estado_Imagen imagen_actual = {0};
+Estado_Imagen cache_texturas[MAX_TEXTURAS_CARGADAS];
+int num_texturas_cargadas = 0;
+
 //**************************************************************************************************************************
 //  PORTOTIPOS
 //**************************************************************************************************************************
@@ -107,6 +111,7 @@ int obtener_indice_cancion(CancionPTR playlist, CancionPTR cancion_actual, int t
 int calcular_inicio_para_centrar(int cancion_seleccionada, int total_canciones);
 void actualizar_scroll(Estado_Scroll *scroll);
 void cambiar_cancion_actual(CancionPTR *cancion_actual, CancionPTR nueva_cancion, bool *esta_reproduciendo);
+Texture2D obtener_textura(const char *ruta);
 
 void mostrarPlaylist(CancionPTR lista);
 void mostrarCancion(CancionPTR cancion);
@@ -319,7 +324,7 @@ void llenar_lista_canciones(CancionPTR *playlist, int *total_canciones)
 
     // Datos de canciones
     const char *titulos[] = {
-        "COME & GO", "DRINKIN", "FAST CAR", "FIRESTONE", "FRIDAY",
+        "COME Y GO", "DRINKIN", "FAST CAR", "FIRESTONE", "FRIDAY",
         "HISTORY", "LET IT BE ME", "LET ME GO", "LEVITATING", "LONELY",
         "SORRY", "UNDER CONTROL", "WHAT WOULD YOU DO?", "WHERE ARE U NOW", "WOULD YOU EVER"};
 
@@ -472,6 +477,36 @@ CancionPTR anterior_cancion(CancionPTR actual)
     if (actual == NULL)
         return NULL;
     return actual->anterior;
+}
+//**************************************************************************************************************************
+Texture2D obtener_textura(const char *ruta)
+{
+    // Buscar en cache
+    for (int i = 0; i < num_texturas_cargadas; i++)
+    {
+        if (strcmp(cache_texturas[i].ruta, ruta) == 0)
+        {
+            return cache_texturas[i].imagen;
+        }
+    }
+
+    // Si no está en cache, cargarla
+    if (num_texturas_cargadas < MAX_TEXTURAS_CARGADAS && ruta[0] != '\0')
+    {
+        Texture2D textura = LoadTexture(ruta);
+        if (textura.id > 0)
+        {
+            SetTextureFilter(textura, TEXTURE_FILTER_BILINEAR);
+            strcpy(cache_texturas[num_texturas_cargadas].ruta, ruta);
+            cache_texturas[num_texturas_cargadas].imagen = textura;
+            cache_texturas[num_texturas_cargadas].cargada = true;
+            num_texturas_cargadas++;
+            return textura;
+        }
+    }
+
+    // Textura vacía si no se pudo cargar
+    return (Texture2D){0};
 }
 //**************************************************************************************************************************
 // PRUEBA DE QUE SI SE LLENA LA PLAYLIST
