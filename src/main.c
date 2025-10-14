@@ -19,8 +19,9 @@ int main()
     int total_canciones = 0;
 
     CancionPTR playlist = NULL;
-    CancionPTR cancion_actual = playlist;
+    CancionPTR cancion_actual = NULL;
     llenar_lista_canciones(&playlist, &total_canciones);
+    cancion_actual = playlist;
 
     int cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
 
@@ -29,8 +30,8 @@ int main()
 
     Estado_Scroll scroll = {0, 0, 0, false};
 
-    scroll.inicio = calcular_inicio_para_centrar(cancion_seleccionada);
-    scroll.target_inicio = scroll.inicio;
+    scroll.inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
+    scroll.target_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
 
     Texture2D fondo = LoadTexture("assets/fondo1.jpg");
     SetTextureFilter(fondo, TEXTURE_FILTER_BILINEAR);
@@ -84,7 +85,7 @@ int main()
                     cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
 
                     // Actualizar scroll
-                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada);
+                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);;
                     if (nuevo_inicio != scroll.inicio)
                     {
                         scroll.target_inicio = nuevo_inicio;
@@ -105,7 +106,7 @@ int main()
                     cambiar_cancion_actual(&cancion_actual, siguiente, &esta_reproduciendo);
                     cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
 
-                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada);
+                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);;
                     if (nuevo_inicio != scroll.inicio)
                     {
                         scroll.target_inicio = nuevo_inicio;
@@ -122,7 +123,7 @@ int main()
                     cambiar_cancion_actual(&cancion_actual, anterior, &esta_reproduciendo);
                     cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
 
-                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada);
+                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);;
                     if (nuevo_inicio != scroll.inicio)
                     {
                         scroll.target_inicio = nuevo_inicio;
@@ -134,26 +135,28 @@ int main()
             // Scroll rápido con PageUp/PageDown
             if (IsKeyPressed(KEY_PAGE_DOWN))
             {
+                CancionPTR temp = cancion_actual;
                 for (int i = 0; i < CANCIONES_VISIBLES; i++)
                 {
-                    cancion_actual = siguiente_cancion(cancion_actual);
+                    temp = siguiente_cancion(temp);
                 }
-                cambiar_cancion_actual(&cancion_actual, cancion_actual, &esta_reproduciendo);
+                cambiar_cancion_actual(&cancion_actual, temp, &esta_reproduciendo);
                 cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
-                int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada);
+                int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);;
                 scroll.target_inicio = nuevo_inicio;
                 scroll.scrolling = true;
             }
 
             if (IsKeyPressed(KEY_PAGE_UP))
             {
+                CancionPTR temp = cancion_actual;
                 for (int i = 0; i < CANCIONES_VISIBLES; i++)
                 {
-                    cancion_actual = anterior_cancion(cancion_actual);
+                    temp = anterior_cancion(temp);
                 }
-                cambiar_cancion_actual(&cancion_actual, cancion_actual, &esta_reproduciendo);
+                cambiar_cancion_actual(&cancion_actual, temp, &esta_reproduciendo);
                 cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
-                int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada);
+                int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);;
                 scroll.target_inicio = nuevo_inicio;
                 scroll.scrolling = true;
             }
@@ -167,13 +170,13 @@ int main()
                 scroll.scrolling = true;
             }
 
-            /*if (IsKeyPressed(KEY_END))
+            if (IsKeyPressed(KEY_END))
             {
-                cambiar_cancion_actual(&cancion_actual, ultimo_nodo, &esta_reproduciendo);
+                cambiar_cancion_actual(&cancion_actual, ultima_cancion, &esta_reproduciendo);
                 cancion_seleccionada = total_canciones - 1;
                 scroll.target_inicio = total_canciones - CANCIONES_VISIBLES;
                 scroll.scrolling = true;
-            }*/
+            }
         }
 
         BeginDrawing();

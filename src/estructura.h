@@ -27,6 +27,7 @@ typedef struct _cancion
 } Cancion;
 
 typedef Cancion *CancionPTR;
+CancionPTR ultima_cancion;
 
 typedef struct
 {
@@ -102,8 +103,9 @@ void insertar_ultimo(CancionPTR nodo, CancionPTR *lista);
 int manejar_boton_simple(Boton_Interfaz boton);
 void llenar_lista_canciones(CancionPTR *playlist, int *total_canciones);
 int obtener_indice_cancion(CancionPTR playlist, CancionPTR cancion_actual, int total_canciones);
+int calcular_inicio_para_centrar(int cancion_seleccionada, int total_canciones);
 void actualizar_scroll(Estado_Scroll *scroll);
-int calcular_inicio_para_centrar(int cancion_seleccionada);
+void cambiar_cancion_actual(CancionPTR *cancion_actual, CancionPTR nueva_cancion, bool *esta_reproduciendo);
 
 void mostrarPlaylist(CancionPTR lista);
 void mostrarCancion(CancionPTR cancion);
@@ -182,20 +184,25 @@ int agregar_cancion(CancionPTR *playlist, const char *titulo, const char *artist
 void insertar_primero(CancionPTR nodo, CancionPTR *lista)
 {
     if (nodo == NULL)
-    {
         return;
-    }
 
-    // insertar cuando esta vacio
     if (*lista == NULL)
     {
         *lista = nodo;
+        nodo->siguiente = nodo;
+        nodo->anterior = nodo;
+        ultima_cancion = nodo;
     }
     else
     {
-        // primero
-        (*lista)->anterior = nodo;
+        CancionPTR ultimo = (*lista)->anterior;
+
         nodo->siguiente = *lista;
+        nodo->anterior = ultimo;
+
+        (*lista)->anterior = nodo;
+        ultimo->siguiente = nodo;
+
         *lista = nodo;
     }
 }
@@ -203,27 +210,25 @@ void insertar_primero(CancionPTR nodo, CancionPTR *lista)
 void insertar_ultimo(CancionPTR nodo, CancionPTR *lista)
 {
     if (nodo == NULL)
-    {
         return;
-    }
 
-    // insertar cuando esta vacio
     if (*lista == NULL)
     {
         *lista = nodo;
+        nodo->siguiente = nodo;
+        nodo->anterior = nodo;
     }
     else
     {
-        // ultimo
-        CancionPTR aux = *lista;
-        while (aux->siguiente != NULL)
-        {
-            aux = aux->siguiente;
-        }
+        CancionPTR ultimo = (*lista)->anterior;
 
-        aux->siguiente = nodo;
-        nodo->anterior = aux;
+        nodo->siguiente = *lista;
+        nodo->anterior = ultimo;
+
+        ultimo->siguiente = nodo;
+        (*lista)->anterior = nodo;
     }
+    ultima_cancion = nodo;
 }
 //**************************************************************************************************************************
 int manejar_boton_simple(Boton_Interfaz boton)
@@ -282,7 +287,7 @@ void llenar_lista_canciones(CancionPTR *playlist, int *total_canciones)
 
     for (int i = 0; i < 15; i++)
     {
-        agregar_cancion(playlist, titulos[i], artistas[i], duraciones[i], ruta_img[i], ruta_aud[i], "\0", 1);
+        agregar_cancion(playlist, titulos[i], artistas[i], duraciones[i], ruta_img[i], ruta_aud[i], "\0", 2);
         (*total_canciones)++;
     }
 }
@@ -291,27 +296,41 @@ int obtener_indice_cancion(CancionPTR playlist, CancionPTR cancion_actual, int t
 {
     if (playlist == NULL || cancion_actual == NULL)
         return 0;
-    
+
     CancionPTR actual = playlist;
     int indice = 0;
-    
-    while (actual != NULL && indice < total_canciones)
+
+    do
     {
         if (actual == cancion_actual)
             return indice;
-        
+
         actual = actual->siguiente;
         indice++;
-    }
-    
+
+        if (indice >= total_canciones)
+            break;
+
+    } while (actual != playlist && actual != NULL);
+
     return 0;
 }
 //**************************************************************************************************************************
-int calcular_inicio_para_centrar(int cancion_seleccionada)
+int calcular_inicio_para_centrar(int cancion_seleccionada, int total_canciones)
 {
-    int inicio = cancion_seleccionada - CANCIONES_VISIBLES / 2;
-    if (inicio < 0)
+    int inicio;
+    
+    if (cancion_seleccionada <= 1) {
         inicio = 0;
+    }
+    else if (cancion_seleccionada >= total_canciones - 2) {
+        inicio = total_canciones - CANCIONES_VISIBLES;
+        if (inicio < 0) inicio = 0;
+    }
+    else {
+        inicio = cancion_seleccionada - CANCIONES_VISIBLES / 2;
+    }
+    
     return inicio;
 }
 //**************************************************************************************************************************
@@ -355,6 +374,8 @@ void actualizar_scroll(Estado_Scroll *scroll)
 //**************************************************************************************************************************
 void cambiar_cancion_actual(CancionPTR *cancion_actual, CancionPTR nueva_cancion, bool *esta_reproduciendo)
 {
+     if (nueva_cancion == NULL) return;
+     
     if (*cancion_actual != nueva_cancion)
     {
         // Detener y liberar recursos de la canción actual

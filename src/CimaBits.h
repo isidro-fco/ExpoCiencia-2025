@@ -61,7 +61,6 @@ int formulario(CancionPTR *playlist, int total_canciones, Texture2D fondo, Font 
 // void dibujar_tabla_canciones(Font fuente1, Font fuente2, Cancion *playlist, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo);
 void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproduciendo);
 
-int calcular_inicio_para_centrar(int cancion_seleccionada);
 //**************************************************************************************************************************
 //  FUNCIONES VISUALES
 //**************************************************************************************************************************
@@ -140,18 +139,18 @@ void secciones_visuales_musica(CancionPTR *playlist, CancionPTR actual, int tota
     }
 
     // Obtener el puntero al primer nodo visible
-    //CancionPTR actual = playlist;
+    CancionPTR visible = *playlist;
     for (int i = 0; i < posision_scroll.inicio; i++)
     {
-        if (actual == NULL)
+        if (visible == NULL)
             break;
-        actual = actual->siguiente;
+        visible = visible->siguiente;
     }
 
-    // Dibujar filas de canciones visibles con desplazamiento suave
+    // Dibujar filas de canciones visibles
     for (int i = 0; i < CANCIONES_VISIBLES; i++)
     {
-        if (actual == NULL)
+        if (visible == NULL)
             break;
 
         int indice = posision_scroll.inicio + i;
@@ -168,37 +167,24 @@ void secciones_visuales_musica(CancionPTR *playlist, CancionPTR actual, int tota
         if (indice == cancion_seleccionada)
         {
             DrawRectangleRounded((Rectangle){tabla_x, y, ancho_columna - 6, altura_fila - 6}, REDONDEZ, SEGMENTOS, color_verde);
-            ultima_cancion_seleccionada = actual; // Guardar la canción seleccionada
+            ultima_cancion_seleccionada = visible;
         }
         else
         {
             DrawRectangleRounded((Rectangle){tabla_x, y, ancho_columna - 6, altura_fila - 6}, REDONDEZ, SEGMENTOS, color_fondo);
         }
 
-        // Dibujar texto del nodo actual
-        if (indice == cancion_seleccionada)
-        {
-            DrawTextEx(fuente2, actual->titulo, (Vector2){tabla_x + 35, y + 30}, TAMANIO_FUENTE_TER, 0, WHITE);
-            DrawTextEx(fuente2, actual->artista, (Vector2){tabla_x + 35, y + 60}, TAMANIO_FUENTE_TER, 0, WHITE);
-            DrawTextEx(fuente2, actual->duracion, (Vector2){tabla_x + 980, y + 45}, TAMANIO_FUENTE_TER, 0, WHITE);
-        }
-        else
-        {
-            DrawTextEx(fuente2, actual->titulo, (Vector2){tabla_x + 35, y + 30}, TAMANIO_FUENTE_TER, 0, color_verde);
-            DrawTextEx(fuente2, actual->artista, (Vector2){tabla_x + 35, y + 60}, TAMANIO_FUENTE_TER, 0, color_verde);
-            DrawTextEx(fuente2, actual->duracion, (Vector2){tabla_x + 980, y + 45}, TAMANIO_FUENTE_TER, 0, color_verde);
-        }
+        // Dibujar texto
+        Color texto_color = (indice == cancion_seleccionada) ? WHITE : color_verde;
+        DrawTextEx(fuente2, visible->titulo, (Vector2){tabla_x + 35, y + 30}, TAMANIO_FUENTE_TER, 0, texto_color);
+        DrawTextEx(fuente2, visible->artista, (Vector2){tabla_x + 35, y + 60}, TAMANIO_FUENTE_TER, 0, texto_color);
+        DrawTextEx(fuente2, visible->duracion, (Vector2){tabla_x + 980, y + 45}, TAMANIO_FUENTE_TER, 0, texto_color);
 
-        // Avanzar al siguiente nodo de la lista
-        if (actual->siguiente != NULL && actual->siguiente != (CancionPTR)playlist)
-        {
-            actual = actual->siguiente;
-        }
+        // Avanzar al siguiente nodo
+        if (visible->siguiente != NULL && visible->siguiente != *playlist)
+            visible = visible->siguiente;
         else
-        {
-            // Si es el último nodo de una lista no circular, salir del loop
             break;
-        }
     }
 
     // Manejo de la canción seleccionada (textura y audio)
