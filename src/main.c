@@ -58,34 +58,30 @@ int main()
         actualizar_scroll(&scroll);
         Vector2 posicion_mouse = GetMousePosition();
 
-        // Lógica de selección con el mouse
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !scroll.scrolling)
         {
-            const int tabla_y = 150;
-            const int fila_altura = 80;
+            const float contenedor_y = ALTO_PANTALLA * 0.16;
+            const float contenedor_altura = ALTO_PANTALLA * 0.68;
+            const float fila_altura = contenedor_altura / CANCIONES_VISIBLES;
 
-            if (posicion_mouse.x >= 50 && posicion_mouse.x <= 750 &&
-                posicion_mouse.y >= tabla_y && posicion_mouse.y <= tabla_y + (CANCIONES_VISIBLES * fila_altura))
+            if (posicion_mouse.x >= ANCHO_PANTALLA * 0.42 && posicion_mouse.x <= ANCHO_PANTALLA * 0.99 &&
+                posicion_mouse.y >= contenedor_y && posicion_mouse.y <= contenedor_y + contenedor_altura)
             {
-                int fila = (posicion_mouse.y - tabla_y) / fila_altura;
+                int fila = (posicion_mouse.y - contenedor_y) / fila_altura;
                 int idx = scroll.inicio + fila;
 
                 if (idx >= 0 && idx < total_canciones)
                 {
-                    // Navegar a la canción seleccionada
-                    Cancion *nueva_cancion = playlist;
-                    for (int i = 0; i < idx; i++)
+                    CancionPTR nueva_cancion = playlist;
+                    for (int i = 0; i < idx && nueva_cancion != NULL; i++)
                     {
                         nueva_cancion = nueva_cancion->siguiente;
                     }
 
                     cambiar_cancion_actual(&cancion_actual, nueva_cancion, &esta_reproduciendo);
-
-                    // Sincronizar el índice de la UI
                     cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
 
-                    // Actualizar scroll
-                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);;
+                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
                     if (nuevo_inicio != scroll.inicio)
                     {
                         scroll.target_inicio = nuevo_inicio;
@@ -106,7 +102,8 @@ int main()
                     cambiar_cancion_actual(&cancion_actual, siguiente, &esta_reproduciendo);
                     cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
 
-                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);;
+                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
+                    ;
                     if (nuevo_inicio != scroll.inicio)
                     {
                         scroll.target_inicio = nuevo_inicio;
@@ -123,7 +120,8 @@ int main()
                     cambiar_cancion_actual(&cancion_actual, anterior, &esta_reproduciendo);
                     cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
 
-                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);;
+                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
+                    ;
                     if (nuevo_inicio != scroll.inicio)
                     {
                         scroll.target_inicio = nuevo_inicio;
@@ -142,7 +140,8 @@ int main()
                 }
                 cambiar_cancion_actual(&cancion_actual, temp, &esta_reproduciendo);
                 cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
-                int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);;
+                int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
+                ;
                 scroll.target_inicio = nuevo_inicio;
                 scroll.scrolling = true;
             }
@@ -156,7 +155,8 @@ int main()
                 }
                 cambiar_cancion_actual(&cancion_actual, temp, &esta_reproduciendo);
                 cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
-                int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);;
+                int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
+                ;
                 scroll.target_inicio = nuevo_inicio;
                 scroll.scrolling = true;
             }
@@ -288,6 +288,7 @@ int main()
             DrawTextEx(fuente2, "AUDIO", (Vector2){260, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
             if (manejar_boton_simple(boton_eliminar) || IsKeyPressed(KEY_DELETE))
             {
+                eliminar_cancion_actual(&cancion_actual, &playlist, &total_canciones, &esta_reproduciendo);
             }
             if (CheckCollisionPointRec(posicion_mouse, (Rectangle){((ANCHO_PANTALLA * 0.4) / 4) * 2 + 30, (ALTO_PANTALLA * 0.17) + 5, ((ANCHO_PANTALLA * 0.68) / 6) - 10, 40}) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             {
@@ -296,10 +297,7 @@ int main()
         }
 
         // PARTE INFERIOR
-        if (manejar_boton_simple(boton_retroceder))
-        {
-            /* code */
-        }
+        manejar_boton_simple(boton_retroceder);
 
         if (esta_reproduciendo)
         {
@@ -316,27 +314,24 @@ int main()
             }
         }
 
-        if (manejar_boton_simple(boton_adelantar))
-        {
-            /* code */
-        }
+        manejar_boton_simple(boton_adelantar);
 
         dibujar_linea_tiempo(&audio_actual, fuente2, esta_reproduciendo);
 
         if (mutear)
         {
-            if (manejar_boton_simple(boton_activar_volumen))
-            {
-                mutear = false;
-                SetMasterVolume(0.0f);
-            }
-        }
-        else
-        {
             if (manejar_boton_simple(boton_silenciar_volumen))
             {
                 mutear = true;
                 SetMasterVolume(0.5f);
+            }
+        }
+        else
+        {
+            if (manejar_boton_simple(boton_activar_volumen))
+            {
+                mutear = false;
+                SetMasterVolume(0.0f);
             }
         }
 

@@ -100,6 +100,7 @@ CancionPTR crear_cancion();
 int agregar_cancion(CancionPTR *playlist, const char *titulo, const char *artista, const char *duracion, const char *ruta_imagen, const char *ruta_audio, const char *ruta_video, int insertar);
 void insertar_primero(CancionPTR nodo, CancionPTR *lista);
 void insertar_ultimo(CancionPTR nodo, CancionPTR *lista);
+void eliminar_cancion_actual(CancionPTR *cancion_actual, CancionPTR *playlist, int *total_canciones, bool *esta_reproduciendo);
 int manejar_boton_simple(Boton_Interfaz boton);
 void llenar_lista_canciones(CancionPTR *playlist, int *total_canciones);
 int obtener_indice_cancion(CancionPTR playlist, CancionPTR cancion_actual, int total_canciones);
@@ -230,6 +231,63 @@ void insertar_ultimo(CancionPTR nodo, CancionPTR *lista)
     }
     ultima_cancion = nodo;
 }
+//******************************************************************************************************
+void eliminar_cancion_actual(CancionPTR *cancion_actual, CancionPTR *playlist, int *total_canciones, bool *esta_reproduciendo)
+{
+    if (*cancion_actual == NULL || *playlist == NULL)
+        return;
+
+    CancionPTR cancion_a_eliminar = *cancion_actual;
+
+    if (*total_canciones == 1)
+    {
+        *playlist = NULL;
+        *cancion_actual = NULL;
+        ultima_cancion = NULL;
+    }
+    else
+    {
+        cancion_a_eliminar->anterior->siguiente = cancion_a_eliminar->siguiente;
+        cancion_a_eliminar->siguiente->anterior = cancion_a_eliminar->anterior;
+
+        if (*playlist == cancion_a_eliminar)
+        {
+            *playlist = cancion_a_eliminar->siguiente;
+        }
+
+        if (ultima_cancion == cancion_a_eliminar)
+        {
+            ultima_cancion = cancion_a_eliminar->anterior;
+        }
+
+        if (cancion_a_eliminar->siguiente != cancion_a_eliminar)
+        {
+            *cancion_actual = cancion_a_eliminar->siguiente;
+        }
+        else
+        {
+            *cancion_actual = cancion_a_eliminar->anterior;
+        }
+    }
+
+    if (audio_actual.cargada && strcmp(audio_actual.ruta, cancion_a_eliminar->audio) == 0)
+    {
+        StopMusicStream(audio_actual.musica);
+        UnloadMusicStream(audio_actual.musica);
+        audio_actual.cargada = false;
+        *esta_reproduciendo = false;
+    }
+
+    free(cancion_a_eliminar);
+    (*total_canciones)--;
+
+    if (*total_canciones == 0)
+    {
+        *playlist = NULL;
+        *cancion_actual = NULL;
+        ultima_cancion = NULL;
+    }
+}
 //**************************************************************************************************************************
 int manejar_boton_simple(Boton_Interfaz boton)
 {
@@ -319,18 +377,22 @@ int obtener_indice_cancion(CancionPTR playlist, CancionPTR cancion_actual, int t
 int calcular_inicio_para_centrar(int cancion_seleccionada, int total_canciones)
 {
     int inicio;
-    
-    if (cancion_seleccionada <= 1) {
+
+    if (cancion_seleccionada <= 1)
+    {
         inicio = 0;
     }
-    else if (cancion_seleccionada >= total_canciones - 2) {
+    else if (cancion_seleccionada >= total_canciones - 2)
+    {
         inicio = total_canciones - CANCIONES_VISIBLES;
-        if (inicio < 0) inicio = 0;
+        if (inicio < 0)
+            inicio = 0;
     }
-    else {
+    else
+    {
         inicio = cancion_seleccionada - CANCIONES_VISIBLES / 2;
     }
-    
+
     return inicio;
 }
 //**************************************************************************************************************************
@@ -374,8 +436,9 @@ void actualizar_scroll(Estado_Scroll *scroll)
 //**************************************************************************************************************************
 void cambiar_cancion_actual(CancionPTR *cancion_actual, CancionPTR nueva_cancion, bool *esta_reproduciendo)
 {
-     if (nueva_cancion == NULL) return;
-     
+    if (nueva_cancion == NULL)
+        return;
+
     if (*cancion_actual != nueva_cancion)
     {
         // Detener y liberar recursos de la canción actual

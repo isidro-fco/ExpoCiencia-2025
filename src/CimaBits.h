@@ -124,9 +124,10 @@ void secciones_visuales_encabezados()
 void secciones_visuales_musica(CancionPTR *playlist, CancionPTR actual, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo, Font fuente1, Font fuente2)
 {
     const int tabla_x = ANCHO_PANTALLA * 0.42;
-    const int tabla_y = ALTO_PANTALLA * 0.16;
     const int ancho_columna = ANCHO_PANTALLA * 0.57;
-    const int altura_fila = ALTO_PANTALLA * 0.128;
+    const float contenedor_y = ALTO_PANTALLA * 0.16;
+    const float contenedor_altura = ALTO_PANTALLA * 0.68;
+    const float altura_fila = contenedor_altura / CANCIONES_VISIBLES;
 
     static CancionPTR ultima_cancion_seleccionada = NULL;
 
@@ -154,10 +155,10 @@ void secciones_visuales_musica(CancionPTR *playlist, CancionPTR actual, int tota
             break;
 
         int indice = posision_scroll.inicio + i;
-        int y = tabla_y + i * altura_fila;
+        float y = contenedor_y + i * altura_fila;
 
         // Solo dibujar si está dentro del área visible
-        if (y < tabla_y - altura_fila || y > tabla_y + (CANCIONES_VISIBLES * altura_fila))
+        if (y < contenedor_y - altura_fila || y > contenedor_y + (CANCIONES_VISIBLES * altura_fila))
         {
             actual = actual->siguiente;
             continue;
