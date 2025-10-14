@@ -35,7 +35,7 @@ int main()
     scroll.inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
     scroll.target_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
 
-    Texture2D fondo = LoadTexture("assets/fondo1.jpg");
+    Texture2D fondo = LoadTexture("assets/fondo.jpg");
     SetTextureFilter(fondo, TEXTURE_FILTER_BILINEAR);
 
     Font fuente_titulo = LoadFontEx("assets/tipografia/TitanOne-Regular.ttf", 64, NULL, 0);
@@ -105,7 +105,6 @@ int main()
                     cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
 
                     int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
-                    ;
                     if (nuevo_inicio != scroll.inicio)
                     {
                         scroll.target_inicio = nuevo_inicio;
@@ -123,7 +122,6 @@ int main()
                     cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
 
                     int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
-                    ;
                     if (nuevo_inicio != scroll.inicio)
                     {
                         scroll.target_inicio = nuevo_inicio;
@@ -143,7 +141,6 @@ int main()
                 cambiar_cancion_actual(&cancion_actual, temp, &esta_reproduciendo);
                 cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
                 int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
-                ;
                 scroll.target_inicio = nuevo_inicio;
                 scroll.scrolling = true;
             }
@@ -158,7 +155,6 @@ int main()
                 cambiar_cancion_actual(&cancion_actual, temp, &esta_reproduciendo);
                 cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
                 int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
-                ;
                 scroll.target_inicio = nuevo_inicio;
                 scroll.scrolling = true;
             }
@@ -274,7 +270,7 @@ int main()
             secciones_visuales_video(&playlist, cancion_actual, total_canciones, scroll, cancion_seleccionada, esta_reproduciendo, fuente1, fuente2);
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4), ALTO_PANTALLA * 0.17, (ANCHO_PANTALLA * 0.68) / 3, 50}, REDONDEZ + 0.4, SEGMENTOS, color_verde);
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4) * 2 + 30, (ALTO_PANTALLA * 0.17) + 5, ((ANCHO_PANTALLA * 0.68) / 6) - 10, 40}, REDONDEZ + 0.4, SEGMENTOS, color_blanco);
-            DrawTextEx(fuente2, "VIDEO", (Vector2){485, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
+            DrawTextEx(fuente2, "VISUAL", (Vector2){478, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
             DrawTextEx(fuente2, "AUDIO", (Vector2){260, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_blanco);
             if (CheckCollisionPointRec(posicion_mouse, (Rectangle){((ANCHO_PANTALLA * 0.4) / 4) + 5, (ALTO_PANTALLA * 0.17) + 5, ((ANCHO_PANTALLA * 0.68) / 6) - 10, 40}) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             {
@@ -286,7 +282,7 @@ int main()
             secciones_visuales_musica(&playlist, cancion_actual, total_canciones, scroll, cancion_seleccionada, esta_reproduciendo, fuente1, fuente2);
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4), ALTO_PANTALLA * 0.17, (ANCHO_PANTALLA * 0.68) / 3, 50}, REDONDEZ + 0.4, SEGMENTOS, color_verde);
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4) + 5, (ALTO_PANTALLA * 0.17) + 5, ((ANCHO_PANTALLA * 0.68) / 6) - 10, 40}, REDONDEZ + 0.4, SEGMENTOS, color_blanco);
-            DrawTextEx(fuente2, "VIDEO", (Vector2){485, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_blanco);
+            DrawTextEx(fuente2, "VISUAL", (Vector2){478, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_blanco);
             DrawTextEx(fuente2, "AUDIO", (Vector2){260, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
             
             // Manejo de eliminación con confirmación
@@ -347,6 +343,22 @@ int main()
             }
         }
 
+        if (audio_actual.cargada)
+        {
+            if (esta_reproduciendo)
+            {
+                if (IsMusicStreamPlaying(audio_actual.musica) == false)
+                {
+                    PlayMusicStream(audio_actual.musica);
+                }
+                UpdateMusicStream(audio_actual.musica);
+            }
+            else
+            {
+                PauseMusicStream(audio_actual.musica);
+            }
+        }
+        
         manejar_boton_simple(boton_adelantar);
 
         dibujar_linea_tiempo(&audio_actual, fuente2, esta_reproduciendo);

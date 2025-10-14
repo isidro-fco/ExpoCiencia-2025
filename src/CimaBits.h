@@ -7,8 +7,8 @@
 //**************************************************************************************************************************
 //  CONSTANTES
 //**************************************************************************************************************************
-#define ANCHO_FONDO 5472 // 3840
-#define ALTO_FONDO 3648  // 2160
+#define ANCHO_FONDO 3840//5472 // 
+#define ALTO_FONDO 2160//3648  // 
 #define TAMANIO_FUENTE 80
 #define TAMANIO_FUENTE_SEC 60
 #define TAMANIO_FUENTE_TER 45
@@ -896,16 +896,17 @@ int formulario(CancionPTR *playlist, int total_canciones, Texture2D fondo, Font 
 
     return 0;
 }
+
 //**************************************************************************************************************************
 void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproduciendo)
 {
     if (!audio->cargada)
         return;
 
-    const int barra_x = 550;
-    const int barra_y = ALTO_PANTALLA * 0.85 + 50;
-    const int barra_width = 800;
-    const int barra_height = 35;
+    const int barra_x = 600;
+    const int barra_y = ALTO_PANTALLA * 0.912;
+    const int barra_width = 950;
+    const int barra_height = 40;
 
     // Actualizar tiempo actual si está reproduciendo
     if (esta_reproduciendo)
@@ -919,9 +920,11 @@ void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproducie
     }
 
     // Dibujar barra de progreso
-    DrawRectangleRounded((Rectangle){barra_x, barra_y, barra_width, barra_height}, REDONDEZ + 0.3, SEGMENTOS, color_amarillo);
+    DrawRectangleRounded((Rectangle){barra_x, barra_y, barra_width, barra_height}, REDONDEZ + 0.5, SEGMENTOS, color_amarillo);
     float progreso = (audio->duracion > 0) ? (audio->tiempo_actual / audio->duracion) : 0;
-    DrawRectangleRounded((Rectangle){barra_x, barra_y, barra_width * progreso, barra_height}, REDONDEZ + 0.3, SEGMENTOS + 90, color_verde);
+    DrawRectangleRounded((Rectangle){barra_x, barra_y, barra_width * progreso, barra_height}, REDONDEZ + 0.5, SEGMENTOS + 90, color_verde);
+    DrawCircle(barra_x + (barra_width * progreso), barra_y+20, 25, color_verde_claro);
+    DrawCircle(barra_x + (barra_width * progreso), barra_y + 20, 15, color_verde);
 
     // Dibujar tiempos
     char tiempo_actual_str[10];
