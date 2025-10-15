@@ -21,6 +21,8 @@ typedef struct _cancion
     char imagen[255];
     char audio[255];
     char video[255];
+    Texture2D *frames_video;
+    int total_frames_video;
 
     struct _cancion *siguiente;
     struct _cancion *anterior;
@@ -81,6 +83,11 @@ typedef enum
     SECCION_IZQUIERDA,
     SECCION_DERECHA
 } Seccion_Pantalla;
+
+const char *ruta_vid[] = {
+    "assets/cargar/video/1", "assets/cargar/video/2", "assets/cargar/video/3", "assets/cargar/video/4", "assets/cargar/video/5",
+    "assets/cargar/video/6", "assets/cargar/video/7", "assets/cargar/video/8", "assets/cargar/video/4", "assets/cargar/video/5",
+    "assets/cargar/video/3", "assets/cargar/video/7"};
 //**************************************************************************************************************************
 //  CONSTANTES
 //**************************************************************************************************************************
@@ -115,6 +122,7 @@ int agregar_cancion(CancionPTR *playlist, const char *titulo, const char *artist
 void insertar_primero(CancionPTR nodo, CancionPTR *lista);
 void insertar_ultimo(CancionPTR nodo, CancionPTR *lista);
 void eliminar_cancion_actual(CancionPTR *cancion_actual, CancionPTR *playlist, int *total_canciones, bool *esta_reproduciendo);
+CancionPTR buscar_canciones(CancionPTR lista, const char *termino, int *total_resultados);
 int manejar_boton_simple(Boton_Interfaz boton);
 void llenar_lista_canciones(CancionPTR *playlist, int *total_canciones);
 int obtener_indice_cancion(CancionPTR playlist, CancionPTR cancion_actual, int total_canciones);
@@ -124,11 +132,14 @@ void cambiar_cancion_actual(CancionPTR *cancion_actual, CancionPTR nueva_cancion
 Texture2D obtener_textura(const char *ruta);
 void generar_rutas(char rutas[MAX_FRAMES][256], const char *nombre_carpeta);
 void cargar_frames(Texture2D *frames, int *total_frames, char rutas[MAX_FRAMES][256]);
-
 void liberar_frames(Texture2D *frames, int total_frames);
-
-void mostrarPlaylist(CancionPTR lista);
-void mostrarCancion(CancionPTR cancion);
+static int comparar_ci(const char *a, const char *b);
+static int cmpTitulo_qsort(const void *a, const void *b);
+static int cmpArtist_qsort(const void *a, const void *b);
+static int cmpDuracion_qsort(const void *a, const void *b);
+CancionPTR ordenarListaNombre(CancionPTR lista);
+CancionPTR ordenarListaArtist(CancionPTR lista);
+CancionPTR ordenarListaDuracion(CancionPTR lista);
 //**************************************************************************************************************************
 //**************************************************************************************************************************
 //  FUNCIONES DE ESTRUCTURA
@@ -308,6 +319,66 @@ void eliminar_cancion_actual(CancionPTR *cancion_actual, CancionPTR *playlist, i
     }
 }
 //**************************************************************************************************************************
+CancionPTR buscar_canciones(CancionPTR lista, const char *termino, int *total_resultados)
+{
+    if (!lista || !termino || strlen(termino) == 0)
+        return NULL;
+
+    CancionPTR resultado = NULL;
+    *total_resultados = 0;
+
+    CancionPTR actual = lista;
+    bool primera = true;
+    const long MAX_ITER = 1000000;
+    long iter = 0;
+
+    while (actual && (primera || actual != lista))
+    {
+        primera = false;
+        iter++;
+        if (iter > MAX_ITER)
+            break;
+
+        // Convertir a minúsculas para comparación insensible a mayúsculas
+        char titulo_lower[65], artista_lower[45], duracion_lower[8], termino_lower[256];
+        strncpy(titulo_lower, actual->titulo, sizeof(titulo_lower));
+        strncpy(artista_lower, actual->artista, sizeof(artista_lower));
+        strncpy(duracion_lower, actual->duracion, sizeof(duracion_lower));
+        strncpy(termino_lower, termino, sizeof(termino_lower));
+
+        for (int i = 0; titulo_lower[i]; i++)
+            titulo_lower[i] = tolower(titulo_lower[i]);
+        for (int i = 0; artista_lower[i]; i++)
+            artista_lower[i] = tolower(artista_lower[i]);
+        for (int i = 0; duracion_lower[i]; i++)
+            duracion_lower[i] = tolower(duracion_lower[i]);
+        for (int i = 0; termino_lower[i]; i++)
+            termino_lower[i] = tolower(termino_lower[i]);
+
+        // Buscar coincidencia parcial
+        if (strstr(titulo_lower, termino_lower) || strstr(artista_lower, termino_lower) || strstr(duracion_lower, termino_lower))
+        {
+            CancionPTR copia = crear_cancion();
+            if (!copia)
+                break;
+
+            strcpy(copia->titulo, actual->titulo);
+            strcpy(copia->artista, actual->artista);
+            strcpy(copia->duracion, actual->duracion);
+            strcpy(copia->imagen, actual->imagen);
+            strcpy(copia->audio, actual->audio);
+            strcpy(copia->video, actual->video);
+
+            insertar_ultimo(copia, &resultado);
+            (*total_resultados)++;
+        }
+
+        actual = actual->siguiente;
+    }
+
+    return resultado;
+}
+//**************************************************************************************************************************
 int manejar_boton_simple(Boton_Interfaz boton)
 {
     Vector2 posision_mouse = GetMousePosition();
@@ -338,14 +409,14 @@ void llenar_lista_canciones(CancionPTR *playlist, int *total_canciones)
 
     // Datos de canciones
     const char *titulos[] = {
-    "MAIN THEME", "DONKEY KONG COUNTRY", "INKOMING!", "GREEN GREENS", "MAIN THEME",
-    "POKEMON CENTER THEME", "WILD POKEMON BATTLE THEME", "GREEN HILL ZONE", "FLOWER GARDEN", "CIRCULO ESTELAR",
-    "EL DESPERTADOR DEL HEROE", "TIERRA DE NADIE"};
+        "MAIN THEME", "DONKEY KONG COUNTRY", "INKOMING!", "GREEN GREENS", "MAIN THEME",
+        "POKEMON CENTER THEME", "WILD POKEMON BATTLE THEME", "GREEN HILL ZONE", "FLOWER GARDEN", "CIRCULO ESTELAR",
+        "EL DESPERTADOR DEL HEROE", "TIERRA DE NADIE"};
 
-const char *artistas[] = {
-    "ANIMAL CROSSING", "DONKEY KONG COUNTRY", "SPLATOON 2", "KIRBY'S DREAM LAND", "SUPER SMASH BROS. BRAWL",
-    "POKEMON RED / BLUE", "POKEMON SWORD Y SHIELD", "SONIC THE HEDGEHOG", "YOSHI'S ISLAND: SMW 2", "MARIO KART DELUXE",
-    "THE LEGEND OF ZELDA", "UNCHARTED"};
+    const char *artistas[] = {
+        "ANIMAL CROSSING", "DONKEY KONG COUNTRY", "SPLATOON 2", "KIRBY'S DREAM LAND", "SUPER SMASH BROS. BRAWL",
+        "POKEMON RED / BLUE", "POKEMON SWORD Y SHIELD", "SONIC THE HEDGEHOG", "YOSHI'S ISLAND: SMW 2", "MARIO KART DELUXE",
+        "THE LEGEND OF ZELDA", "UNCHARTED"};
 
     const char *duraciones[] = {
         "2:08", "3:40", "2:55", "1:31", "2:48",
@@ -353,22 +424,41 @@ const char *artistas[] = {
         "1:07", "1:46"};
 
     const char *ruta_img[] = {
-        "assets/cargar/portada/1.png", "assets/cargar/portada/2.png", "assets/cargar/portada/3.png", "assets/cargar/portada/4.png", "assets/cargar/portada/5.png",
-        "assets/cargar/portada/6.png", "assets/cargar/portada/7.png", "assets/cargar/portada/8.png", "assets/cargar/portada/9.png", "assets/cargar/portada/10.jpg",
-        "assets/cargar/portada/11.png", "assets/cargar/portada/12.jpg", };
+        "assets/cargar/portada/1.png",
+        "assets/cargar/portada/2.png",
+        "assets/cargar/portada/3.png",
+        "assets/cargar/portada/4.png",
+        "assets/cargar/portada/5.png",
+        "assets/cargar/portada/6.png",
+        "assets/cargar/portada/7.png",
+        "assets/cargar/portada/8.png",
+        "assets/cargar/portada/9.png",
+        "assets/cargar/portada/10.jpg",
+        "assets/cargar/portada/11.png",
+        "assets/cargar/portada/12.png",
+    };
 
     const char *ruta_aud[] = {
-        "assets/cargar/audio/1.mp3", "assets/cargar/audio/2.mp3", "assets/cargar/audio/3.mp3", "assets/cargar/audio/4.mp3", "assets/cargar/audio/5.mp3",
-        "assets/cargar/audio/6.mp3", "assets/cargar/audio/7.mp3", "assets/cargar/audio/8.mp3", "assets/cargar/audio/9.mp3", "assets/cargar/audio/10.mp3",
-        "assets/cargar/audio/11.mp3", "assets/cargar/audio/12.mp3", };
-
+        "assets/cargar/audio/1.mp3",
+        "assets/cargar/audio/2.mp3",
+        "assets/cargar/audio/3.mp3",
+        "assets/cargar/audio/4.mp3",
+        "assets/cargar/audio/5.mp3",
+        "assets/cargar/audio/6.mp3",
+        "assets/cargar/audio/7.mp3",
+        "assets/cargar/audio/8.mp3",
+        "assets/cargar/audio/9.mp3",
+        "assets/cargar/audio/10.mp3",
+        "assets/cargar/audio/11.mp3",
+        "assets/cargar/audio/12.mp3",
+    };
 
     // Número total de canciones (se calcula automáticamente)
     int cantidad = sizeof(titulos) / sizeof(titulos[0]);
 
     for (int i = 0; i < cantidad; i++)
     {
-        agregar_cancion(playlist, titulos[i], artistas[i], duraciones[i], ruta_img[i], ruta_aud[i], "\0", 2);
+        agregar_cancion(playlist, titulos[i], artistas[i], duraciones[i], ruta_img[i], ruta_aud[i], ruta_vid[i], 2);
         (*total_canciones)++;
     }
 }
@@ -580,18 +670,405 @@ void liberar_frames(Texture2D *frames, int total_frames)
     }
 }
 //**************************************************************************************************************************
-// PRUEBA DE QUE SI SE LLENA LA PLAYLIST
-void mostrarPlaylist(CancionPTR lista)
+static int comparar_ci(const char *a, const char *b)
 {
-    CancionPTR aux = lista;
-    printf("Titulo%15sArtista\n", " ");
-    while (aux != NULL)
+    if (!a)
+        return (b ? -1 : 0);
+    if (!b)
+        return 1;
+    while (*a && *b)
     {
-        mostrarCancion(aux);
-        aux = aux->siguiente;
+        unsigned char ca = (unsigned char)tolower((unsigned char)*a);
+        unsigned char cb = (unsigned char)tolower((unsigned char)*b);
+        if (ca < cb)
+            return -1;
+        if (ca > cb)
+            return 1;
+        a++;
+        b++;
     }
+    if (*a)
+        return 1;
+    if (*b)
+        return -1;
+    return 0;
 }
-void mostrarCancion(CancionPTR cancion)
+//**************************************************************************************************************************
+/* qsort comparator: recibe punteros a elementos del arreglo (cada elemento es un CancionPTR) */
+static int cmpTitulo_qsort(const void *a, const void *b)
 {
-    printf("%-20s %-20s\n", cancion->titulo, cancion->artista);
+    const CancionPTR *pa = (const CancionPTR *)a;
+    const CancionPTR *pb = (const CancionPTR *)b;
+    if (!pa || !pb)
+        return 0;
+    return comparar_ci((*pa)->titulo, (*pb)->titulo);
 }
+//**************************************************************************************************************************
+static int cmpArtist_qsort(const void *a, const void *b)
+{
+    const CancionPTR *pa = (const CancionPTR *)a;
+    const CancionPTR *pb = (const CancionPTR *)b;
+    if (!pa || !pb)
+        return 0;
+    return comparar_ci((*pa)->artista, (*pb)->artista);
+}
+//**************************************************************************************************************************
+static int cmpDuracion_qsort(const void *a, const void *b)
+{
+    const CancionPTR *pa = (const CancionPTR *)a;
+    const CancionPTR *pb = (const CancionPTR *)b;
+    if (!pa || !pb)
+        return 0;
+    return comparar_ci((*pa)->duracion, (*pb)->duracion);
+}
+//**************************************************************************************************************************
+/* ordenarListaNombre: crea y devuelve UNA NUEVA lista doble circular ordenada por titulo.
+   NO modifica la lista original. */
+CancionPTR ordenarListaNombre(CancionPTR lista)
+{
+    if (!lista)
+        return NULL;
+
+    /* 1) Contar nodos (con protección contra corrupción) */
+    CancionPTR p = lista;
+    long n = 0;
+    const long SAFETY = 1000000;
+    bool primera = true;
+    while (p && (primera || p != lista))
+    {
+        primera = false;
+        n++;
+        if (n > SAFETY)
+            return NULL; /* posible corrupción de lista */
+        p = p->siguiente;
+    }
+    if (n <= 0)
+        return NULL;
+
+    /* 2) Recolectar punteros a nodos originales en un arreglo */
+    CancionPTR *orig = (CancionPTR *)malloc(sizeof(CancionPTR) * (size_t)n);
+    if (!orig)
+        return NULL;
+
+    p = lista;
+    primera = true;
+    long idx = 0;
+    while (p && (primera || p != lista))
+    {
+        primera = false;
+        if (idx >= n)
+            break;
+        orig[idx++] = p;
+        p = p->siguiente;
+    }
+    if (idx != n)
+    {
+        free(orig);
+        return NULL;
+    }
+
+    /* 3) Ordenar el arreglo de punteros por título (case-insensitive) */
+    qsort(orig, (size_t)n, sizeof(CancionPTR), cmpTitulo_qsort);
+
+    /* 4) Crear nueva lista copiando nodos en orden y enlazarlos (doble circular) */
+    CancionPTR nuevaCabeza = NULL;
+    CancionPTR ultimo = NULL;
+
+    for (long i = 0; i < n; ++i)
+    {
+        CancionPTR src = orig[i];
+        CancionPTR copia = (CancionPTR)malloc(sizeof(Cancion));
+        if (!copia)
+        {
+            /* liberar lo creado hasta ahora */
+            if (nuevaCabeza)
+            {
+                /* romper circularidad para facilitar el free */
+                nuevaCabeza->anterior->siguiente = NULL;
+                CancionPTR it = nuevaCabeza;
+                while (it)
+                {
+                    CancionPTR next = it->siguiente;
+                    free(it);
+                    it = next;
+                }
+            }
+            free(orig);
+            return NULL;
+        }
+
+        /* Copiar contenido con límites */
+        strncpy(copia->titulo, src->titulo, sizeof(copia->titulo) - 1);
+        copia->titulo[sizeof(copia->titulo) - 1] = '\0';
+        strncpy(copia->artista, src->artista, sizeof(copia->artista) - 1);
+        copia->artista[sizeof(copia->artista) - 1] = '\0';
+        strncpy(copia->duracion, src->duracion, sizeof(copia->duracion) - 1);
+        copia->duracion[sizeof(copia->duracion) - 1] = '\0';
+        strncpy(copia->imagen, src->imagen, sizeof(copia->imagen) - 1);
+        copia->imagen[sizeof(copia->imagen) - 1] = '\0';
+        strncpy(copia->audio, src->audio, sizeof(copia->audio) - 1);
+        copia->audio[sizeof(copia->audio) - 1] = '\0';
+        strncpy(copia->video, src->video, sizeof(copia->video) - 1);
+        copia->video[sizeof(copia->video) - 1] = '\0';
+
+        /* Inicializar punteros del nodo copia */
+        copia->siguiente = NULL;
+        copia->anterior = NULL;
+
+        if (!nuevaCabeza)
+        {
+            nuevaCabeza = copia;
+            ultimo = copia;
+        }
+        else
+        {
+            /* enlazar al final */
+            ultimo->siguiente = copia;
+            copia->anterior = ultimo;
+            ultimo = copia;
+        }
+    }
+
+    /* 5) cerrar la circularidad (si hay nodos) */
+    if (nuevaCabeza && ultimo)
+    {
+        nuevaCabeza->anterior = ultimo;
+        ultimo->siguiente = nuevaCabeza;
+    }
+
+    free(orig);
+    return nuevaCabeza;
+}
+//**************************************************************************************************************************
+CancionPTR ordenarListaArtist(CancionPTR lista)
+{
+    if (!lista)
+        return NULL;
+
+    /* 1) Contar nodos (con protección contra corrupción) */
+    CancionPTR p = lista;
+    long n = 0;
+    const long SAFETY = 1000000;
+    bool primera = true;
+    while (p && (primera || p != lista))
+    {
+        primera = false;
+        n++;
+        if (n > SAFETY)
+            return NULL; /* posible corrupción de lista */
+        p = p->siguiente;
+    }
+    if (n <= 0)
+        return NULL;
+
+    /* 2) Recolectar punteros a nodos originales en un arreglo */
+    CancionPTR *orig = (CancionPTR *)malloc(sizeof(CancionPTR) * (size_t)n);
+    if (!orig)
+        return NULL;
+
+    p = lista;
+    primera = true;
+    long idx = 0;
+    while (p && (primera || p != lista))
+    {
+        primera = false;
+        if (idx >= n)
+            break;
+        orig[idx++] = p;
+        p = p->siguiente;
+    }
+    if (idx != n)
+    {
+        free(orig);
+        return NULL;
+    }
+
+    /* 3) Ordenar el arreglo de punteros por título (case-insensitive) */
+    qsort(orig, (size_t)n, sizeof(CancionPTR), cmpArtist_qsort);
+
+    /* 4) Crear nueva lista copiando nodos en orden y enlazarlos (doble circular) */
+    CancionPTR nuevaCabeza = NULL;
+    CancionPTR ultimo = NULL;
+
+    for (long i = 0; i < n; ++i)
+    {
+        CancionPTR src = orig[i];
+        CancionPTR copia = (CancionPTR)malloc(sizeof(Cancion));
+        if (!copia)
+        {
+            /* liberar lo creado hasta ahora */
+            if (nuevaCabeza)
+            {
+                /* romper circularidad para facilitar el free */
+                nuevaCabeza->anterior->siguiente = NULL;
+                CancionPTR it = nuevaCabeza;
+                while (it)
+                {
+                    CancionPTR next = it->siguiente;
+                    free(it);
+                    it = next;
+                }
+            }
+            free(orig);
+            return NULL;
+        }
+
+        /* Copiar contenido con límites */
+        strncpy(copia->titulo, src->titulo, sizeof(copia->titulo) - 1);
+        copia->titulo[sizeof(copia->titulo) - 1] = '\0';
+        strncpy(copia->artista, src->artista, sizeof(copia->artista) - 1);
+        copia->artista[sizeof(copia->artista) - 1] = '\0';
+        strncpy(copia->duracion, src->duracion, sizeof(copia->duracion) - 1);
+        copia->duracion[sizeof(copia->duracion) - 1] = '\0';
+        strncpy(copia->imagen, src->imagen, sizeof(copia->imagen) - 1);
+        copia->imagen[sizeof(copia->imagen) - 1] = '\0';
+        strncpy(copia->audio, src->audio, sizeof(copia->audio) - 1);
+        copia->audio[sizeof(copia->audio) - 1] = '\0';
+        strncpy(copia->video, src->video, sizeof(copia->video) - 1);
+        copia->video[sizeof(copia->video) - 1] = '\0';
+
+        /* Inicializar punteros del nodo copia */
+        copia->siguiente = NULL;
+        copia->anterior = NULL;
+
+        if (!nuevaCabeza)
+        {
+            nuevaCabeza = copia;
+            ultimo = copia;
+        }
+        else
+        {
+            /* enlazar al final */
+            ultimo->siguiente = copia;
+            copia->anterior = ultimo;
+            ultimo = copia;
+        }
+    }
+
+    /* 5) cerrar la circularidad (si hay nodos) */
+    if (nuevaCabeza && ultimo)
+    {
+        nuevaCabeza->anterior = ultimo;
+        ultimo->siguiente = nuevaCabeza;
+    }
+
+    free(orig);
+    return nuevaCabeza;
+}
+//**************************************************************************************************************************
+CancionPTR ordenarListaDuracion(CancionPTR lista)
+{
+    if (!lista)
+        return NULL;
+
+    /* 1) Contar nodos (con protección contra corrupción) */
+    CancionPTR p = lista;
+    long n = 0;
+    const long SAFETY = 1000000;
+    bool primera = true;
+    while (p && (primera || p != lista))
+    {
+        primera = false;
+        n++;
+        if (n > SAFETY)
+            return NULL; /* posible corrupción de lista */
+        p = p->siguiente;
+    }
+    if (n <= 0)
+        return NULL;
+
+    /* 2) Recolectar punteros a nodos originales en un arreglo */
+    CancionPTR *orig = (CancionPTR *)malloc(sizeof(CancionPTR) * (size_t)n);
+    if (!orig)
+        return NULL;
+
+    p = lista;
+    primera = true;
+    long idx = 0;
+    while (p && (primera || p != lista))
+    {
+        primera = false;
+        if (idx >= n)
+            break;
+        orig[idx++] = p;
+        p = p->siguiente;
+    }
+    if (idx != n)
+    {
+        free(orig);
+        return NULL;
+    }
+
+    /* 3) Ordenar el arreglo de punteros por título (case-insensitive) */
+    qsort(orig, (size_t)n, sizeof(CancionPTR), cmpDuracion_qsort);
+
+    /* 4) Crear nueva lista copiando nodos en orden y enlazarlos (doble circular) */
+    CancionPTR nuevaCabeza = NULL;
+    CancionPTR ultimo = NULL;
+
+    for (long i = 0; i < n; ++i)
+    {
+        CancionPTR src = orig[i];
+        CancionPTR copia = (CancionPTR)malloc(sizeof(Cancion));
+        if (!copia)
+        {
+            /* liberar lo creado hasta ahora */
+            if (nuevaCabeza)
+            {
+                /* romper circularidad para facilitar el free */
+                nuevaCabeza->anterior->siguiente = NULL;
+                CancionPTR it = nuevaCabeza;
+                while (it)
+                {
+                    CancionPTR next = it->siguiente;
+                    free(it);
+                    it = next;
+                }
+            }
+            free(orig);
+            return NULL;
+        }
+
+        /* Copiar contenido con límites */
+        strncpy(copia->titulo, src->titulo, sizeof(copia->titulo) - 1);
+        copia->titulo[sizeof(copia->titulo) - 1] = '\0';
+        strncpy(copia->artista, src->artista, sizeof(copia->artista) - 1);
+        copia->artista[sizeof(copia->artista) - 1] = '\0';
+        strncpy(copia->duracion, src->duracion, sizeof(copia->duracion) - 1);
+        copia->duracion[sizeof(copia->duracion) - 1] = '\0';
+        strncpy(copia->imagen, src->imagen, sizeof(copia->imagen) - 1);
+        copia->imagen[sizeof(copia->imagen) - 1] = '\0';
+        strncpy(copia->audio, src->audio, sizeof(copia->audio) - 1);
+        copia->audio[sizeof(copia->audio) - 1] = '\0';
+        strncpy(copia->video, src->video, sizeof(copia->video) - 1);
+        copia->video[sizeof(copia->video) - 1] = '\0';
+
+        /* Inicializar punteros del nodo copia */
+        copia->siguiente = NULL;
+        copia->anterior = NULL;
+
+        if (!nuevaCabeza)
+        {
+            nuevaCabeza = copia;
+            ultimo = copia;
+        }
+        else
+        {
+            /* enlazar al final */
+            ultimo->siguiente = copia;
+            copia->anterior = ultimo;
+            ultimo = copia;
+        }
+    }
+
+    /* 5) cerrar la circularidad (si hay nodos) */
+    if (nuevaCabeza && ultimo)
+    {
+        nuevaCabeza->anterior = ultimo;
+        ultimo->siguiente = nuevaCabeza;
+    }
+
+    free(orig);
+    return nuevaCabeza;
+}
+//**************************************************************************************************************************

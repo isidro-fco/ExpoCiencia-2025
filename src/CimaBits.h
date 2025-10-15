@@ -995,31 +995,34 @@ void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproducie
 //**************************************************************************************************************************
 void ver_video(Texture2D *frames, int total_frames, int *frame_actual, float *tiempo_frame, float intervalo, float x, float y, float escala, bool pausa)
 {
+    if (total_frames <= 0) 
+    {
+        // Dibujar un placeholder o mensaje cuando no hay video
+        DrawRectangle(x, y, 500 * escala, 300 * escala, DARKGRAY);
+        DrawText("Video no disponible", x + 10, y + 10, 20, WHITE);
+        return;
+    }
+
     if (pausa)
     {
         *tiempo_frame += GetFrameTime();
     }
 
-    if (total_frames > 0)
+    if (*tiempo_frame >= intervalo)
     {
-        if (*tiempo_frame >= intervalo)
-        {
-            *frame_actual = (*frame_actual + 1) % total_frames;
-            *tiempo_frame = 0.0f;
-        }
+        *frame_actual = (*frame_actual + 1) % total_frames;
+        *tiempo_frame = 0.0f;
+    }
 
-        Texture2D frame = frames[*frame_actual];
-
+    Texture2D frame = frames[*frame_actual];
+    
+    if (frame.id > 0)
+    {
         Rectangle src = {0, 0, frame.width, frame.height};
         Rectangle dest = {x, y, frame.width * escala, frame.height * escala};
         Vector2 origin = {0, 0};
 
         DrawTexturePro(frame, src, dest, origin, 0.0f, WHITE);
-        DrawText(TextFormat("Frame %d / %d", *frame_actual + 1, total_frames), 20, 20, 20, GREEN);
-    }
-    else
-    {
-        DrawText("No se encontraron imágenes en la carpeta", 20, 20, 20, RED);
     }
 }
 //**************************************************************************************************************************
