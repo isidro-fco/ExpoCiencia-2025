@@ -42,6 +42,7 @@ typedef struct
     float desplazamiento;
     int target_inicio;
     bool scrolling;
+    bool animacion_rapida;
 } Estado_Scroll;
 
 typedef struct
@@ -88,6 +89,7 @@ typedef enum
 #define CANCIONES_VISIBLES 5
 #define SCROLL_VELOCIDAD 20
 #define MAX_TEXTURAS_CARGADAS 100
+#define MAX_FRAMES 2000
 //**************************************************************************************************************************
 //  VARIABLES
 //**************************************************************************************************************************
@@ -95,7 +97,14 @@ Estado_Audio audio_actual = {0};
 Estado_Imagen imagen_actual = {0};
 Estado_Imagen cache_texturas[MAX_TEXTURAS_CARGADAS];
 int num_texturas_cargadas = 0;
-
+Texture2D frames[MAX_FRAMES];
+char rutas[MAX_FRAMES][256];
+int total_frames = 0;
+int frame_actual = 0;
+float tiempo_frame = 0.0f;
+float intervalo = 1.0f / 10.0f;
+float x = (ANCHO_PANTALLA / 2) - 720;
+float y = (ALTO_PANTALLA / 2) - 280;
 //**************************************************************************************************************************
 //  PORTOTIPOS
 //**************************************************************************************************************************
@@ -112,6 +121,10 @@ int calcular_inicio_para_centrar(int cancion_seleccionada, int total_canciones);
 void actualizar_scroll(Estado_Scroll *scroll);
 void cambiar_cancion_actual(CancionPTR *cancion_actual, CancionPTR nueva_cancion, bool *esta_reproduciendo);
 Texture2D obtener_textura(const char *ruta);
+void generar_rutas(char rutas[MAX_FRAMES][256], const char *nombre_carpeta);
+void cargar_frames(Texture2D *frames, int *total_frames, char rutas[MAX_FRAMES][256]);
+
+void liberar_frames(Texture2D *frames, int total_frames);
 
 void mostrarPlaylist(CancionPTR lista);
 void mostrarCancion(CancionPTR cancion);
@@ -323,36 +336,18 @@ void llenar_lista_canciones(CancionPTR *playlist, int *total_canciones)
     }
 
     // Datos de canciones
-    const char *titulos[] = {
-        "COME Y GO", "DRINKIN", "FAST CAR", "FIRESTONE", "FRIDAY",
-        "HISTORY", "LET IT BE ME", "LET ME GO", "LEVITATING", "LONELY",
-        "SORRY", "UNDER CONTROL", "WHAT WOULD YOU DO?", "WHERE ARE U NOW", "WOULD YOU EVER"};
+    const char *titulos[] = {"INTRO-PACMAN"};
 
-    const char *artistas[] = {
-        "MARSHMELLO", "JOEL CORRY", "JONAS BLUE", "KYGO", "RITON Y NIGHCRAWLERS",
-        "JOEL CORRY", "BACKSTREET BOYS", "ALESSO", "DUA LIPA", "JOEL CORRY",
-        "JOEL CORRY", "ALESSO", "JOEL CORRY", "JACK U", "SKRILLEX"};
+    const char *artistas[] = {"PAC-MAN"};
 
-    const char *duraciones[] = {
-        "3:25", "2:29", "3:32", "4:31", "2:49",
-        "2:56", "3:44", "2:54", "3:23", "3:10",
-        "3:08", "3:04", "2:54", "4:10", "3:54"};
+    const char *duraciones[] = {"3:33"};
 
-    const char *ruta_img[] = {
-        "insertar/8.jpg", "insertar/5.jpg", "insertar/6.jpg", "insertar/7.jpg", "insertar/9.jpg",
-        "insertar/5.jpg", "insertar/2.jpg", "insertar/1.jpg", "insertar/3.jpg", "insertar/5.jpg",
-        "insertar/5.jpg", "insertar/1.jpg", "insertar/5.jpg", "insertar/4.jpg", "insertar/0.jpg"};
+    const char *ruta_img[] = {"assets/cargar/portadas/1.jpg"};
 
-    const char *ruta_aud[] = {
-        "insertar/Come Go.mp3", "insertar/Drinkin.mp3", "insertar/Fast Car.mp3", "insertar/Firestone.mp3", "insertar/Friday.mp3",
-        "insertar/History.mp3", "insertar/Let It Be Me.mp3", "insertar/Let Me Go.mp3", "insertar/Levitating.mp3", "insertar/Lonely.mp3",
-        "insertar/Sorry.mp3", "insertar/Under Control.mp3", "insertar/What Would You Do.mp3", "insertar/Where Are U Now.mp3", "insertar/Would You Ever.mp3"};
+    const char *ruta_aud[] = {"assets/cargar/audio/1.mp3"};
 
-    for (int i = 0; i < 15; i++)
-    {
-        agregar_cancion(playlist, titulos[i], artistas[i], duraciones[i], ruta_img[i], ruta_aud[i], "\0", 2);
-        (*total_canciones)++;
-    }
+    agregar_cancion(playlist, titulos[0], artistas[0], duraciones[0], ruta_img[0], ruta_aud[0], "\0", 2);
+    (*total_canciones)++;
 }
 //**************************************************************************************************************************
 int obtener_indice_cancion(CancionPTR playlist, CancionPTR cancion_actual, int total_canciones)
@@ -405,6 +400,16 @@ void actualizar_scroll(Estado_Scroll *scroll)
 {
     if (scroll->scrolling)
     {
+        // Si la animación está desactivada, saltar directamente al objetivo
+        if (scroll->animacion_rapida)
+        {
+            scroll->inicio = scroll->target_inicio;
+            scroll->desplazamiento = 0;
+            scroll->scrolling = false;
+            scroll->animacion_rapida = false;
+            return;
+        }
+
         // Si hemos llegado al objetivo
         if (scroll->inicio == scroll->target_inicio && scroll->desplazamiento == 0)
         {
@@ -507,6 +512,49 @@ Texture2D obtener_textura(const char *ruta)
 
     // Textura vacía si no se pudo cargar
     return (Texture2D){0};
+}
+//**************************************************************************************************************************
+void generar_rutas(char rutas[MAX_FRAMES][256], const char *nombre_carpeta)
+{
+    for (int i = 1; i <= MAX_FRAMES; i++)
+    {
+        sprintf(rutas[i - 1], "%s/frame_%04d.png", nombre_carpeta, i);
+    }
+}
+//**************************************************************************************************************************
+void cargar_frames(Texture2D *frames, int *total_frames, char rutas[MAX_FRAMES][256])
+{
+    liberar_frames(frames, *total_frames);
+    *total_frames = 0;
+
+    // Inicializamos id a 0 para seguridad
+    for (int i = 0; i < MAX_FRAMES; i++)
+        frames[i].id = 0;
+
+    for (int i = 0; i < MAX_FRAMES; i++)
+    {
+        if (FileExists(rutas[i]))
+        {
+            frames[*total_frames] = LoadTexture(rutas[i]);
+            SetTextureFilter(frames[*total_frames], TEXTURE_FILTER_BILINEAR);
+            TraceLog(LOG_INFO, "Cargado: %s", rutas[i]); // ayuda a debug
+            (*total_frames)++;
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+//**************************************************************************************************************************
+void liberar_frames(Texture2D *frames, int total_frames)
+{
+    for (int i = 0; i < total_frames; i++)
+    {
+        if (frames[i].id != 0)
+            UnloadTexture(frames[i]);
+        frames[i].id = 0;
+    }
 }
 //**************************************************************************************************************************
 // PRUEBA DE QUE SI SE LLENA LA PLAYLIST

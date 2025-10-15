@@ -7,8 +7,8 @@
 //**************************************************************************************************************************
 //  CONSTANTES
 //**************************************************************************************************************************
-#define ANCHO_FONDO 3840//5472 // 
-#define ALTO_FONDO 2160//3648  // 
+#define ANCHO_FONDO 3840
+#define ALTO_FONDO 2160
 #define TAMANIO_FUENTE 80
 #define TAMANIO_FUENTE_SEC 60
 #define TAMANIO_FUENTE_TER 45
@@ -47,7 +47,6 @@ Boton_Interfaz boton_aceptar_busqueda;
 Boton_Interfaz boton_cancelar_busqueda;
 Boton_Interfaz boton_aceptar_forms;
 Boton_Interfaz boton_cancelar_forms;
-
 //**************************************************************************************************************************
 //  PROTOTIPOS
 //**************************************************************************************************************************
@@ -61,7 +60,7 @@ void secciones_visuales_video(CancionPTR *playlist, CancionPTR actual, int total
 void configurar_botones();
 int formulario(CancionPTR *playlist, int total_canciones, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3);
 void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproduciendo);
-
+void ver_video(Texture2D *frames, int total_frames, int *frame_actual, float *tiempo_frame, float intervalo, float x, float y, float escala, bool pausa);
 //**************************************************************************************************************************
 //  FUNCIONES VISUALES
 //**************************************************************************************************************************
@@ -923,8 +922,8 @@ void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproducie
     DrawRectangleRounded((Rectangle){barra_x, barra_y, barra_width, barra_height}, REDONDEZ + 0.5, SEGMENTOS, color_amarillo);
     float progreso = (audio->duracion > 0) ? (audio->tiempo_actual / audio->duracion) : 0;
     DrawRectangleRounded((Rectangle){barra_x, barra_y, barra_width * progreso, barra_height}, REDONDEZ + 0.5, SEGMENTOS + 90, color_verde);
-    DrawCircle(barra_x + (barra_width * progreso), barra_y+20, 25, color_verde_claro);
-    DrawCircle(barra_x + (barra_width * progreso), barra_y + 20, 15, color_verde);
+    DrawCircle(barra_x + (barra_width * progreso), barra_y + 20, 25, color_verde_claro);
+    DrawCircle(barra_x + (barra_width * progreso), barra_y + 20, 18, color_verde);
 
     // Dibujar tiempos
     char tiempo_actual_str[10];
@@ -938,7 +937,39 @@ void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproducie
     sprintf(tiempo_actual_str, "%d:%02d", minutos_actual, segundos_actual);
     sprintf(duracion_str, "%d:%02d", minutos_total, segundos_total);
 
-    DrawTextEx(fuente, tiempo_actual_str, (Vector2){barra_x - 50, barra_y}, TAMANIO_FUENTE_CUA, 0, color_verde);
-    DrawTextEx(fuente, duracion_str, (Vector2){barra_x + barra_width + 10, barra_y}, TAMANIO_FUENTE_CUA, 0, color_verde);
+    DrawTextEx(fuente, tiempo_actual_str, (Vector2){barra_x - 80, barra_y}, TAMANIO_FUENTE_CUA, 0, color_verde_claro);
+    DrawTextEx(fuente, duracion_str, (Vector2){barra_x + barra_width + 40, barra_y}, TAMANIO_FUENTE_CUA, 0, color_verde_claro);
+}
+//**************************************************************************************************************************
+void ver_video(Texture2D *frames, int total_frames, int *frame_actual, float *tiempo_frame, float intervalo, float x, float y, float escala, bool pausa)
+{
+    if (pausa)
+    {
+           *tiempo_frame += GetFrameTime();
+    }
+    
+
+
+    if (total_frames > 0)
+    {
+        if (*tiempo_frame >= intervalo)
+        {
+            *frame_actual = (*frame_actual + 1) % total_frames;
+            *tiempo_frame = 0.0f;
+        }
+
+        Texture2D frame = frames[*frame_actual];
+
+        Rectangle src = { 0, 0, frame.width, frame.height };
+        Rectangle dest = { x, y, frame.width * escala, frame.height * escala };
+        Vector2 origin = { 0, 0 };
+
+        DrawTexturePro(frame, src, dest, origin, 0.0f, WHITE);
+        DrawText(TextFormat("Frame %d / %d", *frame_actual + 1, total_frames), 20, 20, 20, GREEN);
+    }
+    else
+    {
+        DrawText("No se encontraron imágenes en la carpeta", 20, 20, 20, RED);
+    }
 }
 //**************************************************************************************************************************

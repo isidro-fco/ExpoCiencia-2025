@@ -9,7 +9,6 @@ int main()
     static bool artista = false;
     static bool duracion = false;
     bool abrir_busqueda_anterior = busqueda;
-
     bool multimedia = false;
     bool esta_reproduciendo = true;
     bool esta_silenciado = false;
@@ -17,7 +16,6 @@ int main()
     bool confirmar_eliminacion = false;
     double tiempo_confirmacion = 0;
     bool mutear = false;
-
     int total_canciones = 0;
 
     CancionPTR playlist = NULL;
@@ -30,7 +28,7 @@ int main()
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
     InitWindow(ANCHO_PANTALLA, ALTO_PANTALLA, "CimaBits 2025");
 
-    Estado_Scroll scroll = {0, 0, 0, false};
+    Estado_Scroll scroll = {0, 0, 0, false, false};
 
     scroll.inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
     scroll.target_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
@@ -51,6 +49,14 @@ int main()
 
     configurar_botones();
 
+    x = ANCHO_PANTALLA * 0.01f;
+    y = ALTO_PANTALLA * 0.16f;
+
+    const char *carpeta = "assets/cargar/videos/1";
+
+    generar_rutas(rutas, carpeta);
+    cargar_frames(frames, &total_frames, rutas);
+
     SetTargetFPS(60);
     InitAudioDevice();
     SetMasterVolume(0.5f);
@@ -60,6 +66,7 @@ int main()
         actualizar_scroll(&scroll);
         Vector2 posicion_mouse = GetMousePosition();
 
+        // NAVEGACIÓN CON CURSOR
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !scroll.scrolling)
         {
             const float contenedor_y = ALTO_PANTALLA * 0.16;
@@ -93,7 +100,7 @@ int main()
             }
         }
 
-        // Navegación con teclado o botones
+        // NAVEGACIÓN CON TECLADO O BOTONES
         if (!scroll.scrolling)
         {
             if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_DOWN) || manejar_boton_simple(boton_adelantar))
@@ -105,10 +112,19 @@ int main()
                     cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
 
                     int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
-                    if (nuevo_inicio != scroll.inicio)
+                    if (siguiente != playlist)
+                    {
+                        if (nuevo_inicio != scroll.inicio)
+                        {
+                            scroll.target_inicio = nuevo_inicio;
+                            scroll.scrolling = true;
+                        }
+                    }
+                    else
                     {
                         scroll.target_inicio = nuevo_inicio;
                         scroll.scrolling = true;
+                        scroll.animacion_rapida = true;
                     }
                 }
             }
@@ -122,15 +138,23 @@ int main()
                     cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
 
                     int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
-                    if (nuevo_inicio != scroll.inicio)
+                    if (anterior != ultima_cancion)
+                    {
+                        if (nuevo_inicio != scroll.inicio)
+                        {
+                            scroll.target_inicio = nuevo_inicio;
+                            scroll.scrolling = true;
+                        }
+                    }
+                    else
                     {
                         scroll.target_inicio = nuevo_inicio;
                         scroll.scrolling = true;
+                        scroll.animacion_rapida = true;
                     }
                 }
             }
 
-            // Scroll rápido con PageUp/PageDown
             if (IsKeyPressed(KEY_PAGE_DOWN))
             {
                 CancionPTR temp = cancion_actual;
@@ -143,6 +167,7 @@ int main()
                 int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
                 scroll.target_inicio = nuevo_inicio;
                 scroll.scrolling = true;
+                scroll.animacion_rapida = true;
             }
 
             if (IsKeyPressed(KEY_PAGE_UP))
@@ -157,15 +182,16 @@ int main()
                 int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
                 scroll.target_inicio = nuevo_inicio;
                 scroll.scrolling = true;
+                scroll.animacion_rapida = true;
             }
 
-            // Ir al inicio/fin con Home/End
             if (IsKeyPressed(KEY_HOME))
             {
                 cambiar_cancion_actual(&cancion_actual, playlist, &esta_reproduciendo);
                 cancion_seleccionada = 0;
                 scroll.target_inicio = 0;
                 scroll.scrolling = true;
+                scroll.animacion_rapida = true;
             }
 
             if (IsKeyPressed(KEY_END))
@@ -174,19 +200,21 @@ int main()
                 cancion_seleccionada = total_canciones - 1;
                 scroll.target_inicio = total_canciones - CANCIONES_VISIBLES;
                 scroll.scrolling = true;
+                scroll.animacion_rapida = true;
             }
         }
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
+        // PANTALLA DE PRESENTACIÓN
         if (!pantalla_desarrollador_activa)
         {
             pantalla_desarrollador(fuente_titulo, fuente1, fuente2);
             pantalla_desarrollador_activa = true;
-            continue;
         }
 
+        // FONDO
         float escala = fmaxf((float)ANCHO_PANTALLA / ANCHO_FONDO, (float)ALTO_PANTALLA / ALTO_FONDO);
         DrawTexturePro(fondo, (Rectangle){0, 0, ANCHO_FONDO, ALTO_FONDO}, (Rectangle){(ANCHO_PANTALLA - ANCHO_FONDO * escala) * 0.5f, (ALTO_PANTALLA - ALTO_FONDO * escala) * 0.5f, ANCHO_FONDO * escala, ALTO_FONDO * escala}, (Vector2){0, 0}, 0.0f, WHITE);
 
@@ -268,6 +296,7 @@ int main()
         if (multimedia)
         {
             secciones_visuales_video(&playlist, cancion_actual, total_canciones, scroll, cancion_seleccionada, esta_reproduciendo, fuente1, fuente2);
+            ver_video(frames, total_frames, &frame_actual, &tiempo_frame, intervalo, x, y, 0.68f, esta_reproduciendo);
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4), ALTO_PANTALLA * 0.17, (ANCHO_PANTALLA * 0.68) / 3, 50}, REDONDEZ + 0.4, SEGMENTOS, color_verde);
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4) * 2 + 30, (ALTO_PANTALLA * 0.17) + 5, ((ANCHO_PANTALLA * 0.68) / 6) - 10, 40}, REDONDEZ + 0.4, SEGMENTOS, color_blanco);
             DrawTextEx(fuente2, "VISUAL", (Vector2){478, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
@@ -284,7 +313,7 @@ int main()
             DrawRectangleRounded((Rectangle){((ANCHO_PANTALLA * 0.4) / 4) + 5, (ALTO_PANTALLA * 0.17) + 5, ((ANCHO_PANTALLA * 0.68) / 6) - 10, 40}, REDONDEZ + 0.4, SEGMENTOS, color_blanco);
             DrawTextEx(fuente2, "VISUAL", (Vector2){478, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_blanco);
             DrawTextEx(fuente2, "AUDIO", (Vector2){260, (ALTO_PANTALLA * 0.17) + 7}, TAMANIO_FUENTE_CUA, 1, color_verde);
-            
+
             // Manejo de eliminación con confirmación
             if (manejar_boton_simple(boton_eliminar) || IsKeyPressed(KEY_DELETE))
             {
@@ -293,6 +322,7 @@ int main()
                     // Segunda pulsación dentro del tiempo: eliminar
                     eliminar_cancion_actual(&cancion_actual, &playlist, &total_canciones, &esta_reproduciendo);
                     confirmar_eliminacion = false;
+                    esta_reproduciendo = true;
                 }
                 else
                 {
@@ -358,7 +388,7 @@ int main()
                 PauseMusicStream(audio_actual.musica);
             }
         }
-        
+
         manejar_boton_simple(boton_adelantar);
 
         dibujar_linea_tiempo(&audio_actual, fuente2, esta_reproduciendo);
@@ -396,6 +426,7 @@ int main()
     UnloadTexture(boton_activar_volumen.textura);
     UnloadTexture(boton_silenciar_volumen.textura);
     UnloadTexture(boton_eliminar.textura);
+    liberar_frames(frames, total_frames);
     CloseAudioDevice();
     CloseWindow();
     return 0;
