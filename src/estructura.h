@@ -93,6 +93,7 @@ typedef enum
 //**************************************************************************************************************************
 //  VARIABLES
 //**************************************************************************************************************************
+
 Estado_Audio audio_actual = {0};
 Estado_Imagen imagen_actual = {0};
 Estado_Imagen cache_texturas[MAX_TEXTURAS_CARGADAS];
@@ -336,18 +337,40 @@ void llenar_lista_canciones(CancionPTR *playlist, int *total_canciones)
     }
 
     // Datos de canciones
-    const char *titulos[] = {"INTRO-PACMAN"};
+    const char *titulos[] = {
+    "MAIN THEME", "DONKEY KONG COUNTRY", "INKOMING!", "GREEN GREENS", "MAIN THEME",
+    "POKEMON CENTER THEME", "WILD POKEMON BATTLE THEME", "GREEN HILL ZONE", "FLOWER GARDEN", "CIRCULO ESTELAR",
+    "EL DESPERTADOR DEL HEROE", "TIERRA DE NADIE"};
 
-    const char *artistas[] = {"PAC-MAN"};
+const char *artistas[] = {
+    "ANIMAL CROSSING", "DONKEY KONG COUNTRY", "SPLATOON 2", "KIRBY'S DREAM LAND", "SUPER SMASH BROS. BRAWL",
+    "POKEMON RED / BLUE", "POKEMON SWORD Y SHIELD", "SONIC THE HEDGEHOG", "YOSHI'S ISLAND: SMW 2", "MARIO KART DELUXE",
+    "THE LEGEND OF ZELDA", "UNCHARTED"};
 
-    const char *duraciones[] = {"3:33"};
+    const char *duraciones[] = {
+        "2:08", "3:40", "2:55", "1:31", "2:48",
+        "1:08", "4:59", "2:21", "2:53", "1:44",
+        "1:07", "1:46"};
 
-    const char *ruta_img[] = {"assets/cargar/portadas/1.jpg"};
+    const char *ruta_img[] = {
+        "assets/cargar/portada/1.png", "assets/cargar/portada/2.png", "assets/cargar/portada/3.png", "assets/cargar/portada/4.png", "assets/cargar/portada/5.png",
+        "assets/cargar/portada/6.png", "assets/cargar/portada/7.png", "assets/cargar/portada/8.png", "assets/cargar/portada/9.png", "assets/cargar/portada/10.jpg",
+        "assets/cargar/portada/11.png", "assets/cargar/portada/12.jpg", };
 
-    const char *ruta_aud[] = {"assets/cargar/audio/1.mp3"};
+    const char *ruta_aud[] = {
+        "assets/cargar/audio/1.mp3", "assets/cargar/audio/2.mp3", "assets/cargar/audio/3.mp3", "assets/cargar/audio/4.mp3", "assets/cargar/audio/5.mp3",
+        "assets/cargar/audio/6.mp3", "assets/cargar/audio/7.mp3", "assets/cargar/audio/8.mp3", "assets/cargar/audio/9.mp3", "assets/cargar/audio/10.mp3",
+        "assets/cargar/audio/11.mp3", "assets/cargar/audio/12.mp3", };
 
-    agregar_cancion(playlist, titulos[0], artistas[0], duraciones[0], ruta_img[0], ruta_aud[0], "\0", 2);
-    (*total_canciones)++;
+
+    // Número total de canciones (se calcula automáticamente)
+    int cantidad = sizeof(titulos) / sizeof(titulos[0]);
+
+    for (int i = 0; i < cantidad; i++)
+    {
+        agregar_cancion(playlist, titulos[i], artistas[i], duraciones[i], ruta_img[i], ruta_aud[i], "\0", 2);
+        (*total_canciones)++;
+    }
 }
 //**************************************************************************************************************************
 int obtener_indice_cancion(CancionPTR playlist, CancionPTR cancion_actual, int total_canciones)

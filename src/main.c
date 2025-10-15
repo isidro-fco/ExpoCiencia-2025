@@ -16,6 +16,7 @@ int main()
     bool confirmar_eliminacion = false;
     double tiempo_confirmacion = 0;
     bool mutear = false;
+
     int total_canciones = 0;
 
     CancionPTR playlist = NULL;
@@ -23,6 +24,7 @@ int main()
     llenar_lista_canciones(&playlist, &total_canciones);
     cancion_actual = playlist;
 
+    
     int cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
 
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
@@ -33,6 +35,8 @@ int main()
     scroll.inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
     scroll.target_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
 
+    Texture2D logo = LoadTexture("assets/logo.png");
+    SetTextureFilter(logo, TEXTURE_FILTER_BILINEAR);
     Texture2D fondo = LoadTexture("assets/fondo.jpg");
     SetTextureFilter(fondo, TEXTURE_FILTER_BILINEAR);
 
@@ -69,11 +73,31 @@ int main()
         // NAVEGACIÓN CON CURSOR
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !scroll.scrolling)
         {
-            const float contenedor_y = ALTO_PANTALLA * 0.16;
-            const float contenedor_altura = ALTO_PANTALLA * 0.68;
+            // Valores comunes
+            const float contenedor_y = ALTO_PANTALLA * 0.16f;
+            const float contenedor_altura = ALTO_PANTALLA * 0.68f;
             const float fila_altura = contenedor_altura / CANCIONES_VISIBLES;
 
-            if (posicion_mouse.x >= ANCHO_PANTALLA * 0.42 && posicion_mouse.x <= ANCHO_PANTALLA * 0.99 &&
+            // Área horizontal según modo
+            float tabla_x = 0.0f;
+            float ancho_columna = 0.0f;
+
+            if (multimedia)
+            {
+                ancho_columna = ANCHO_PANTALLA * 0.29f;
+                tabla_x = ANCHO_PANTALLA - ANCHO_PANTALLA * 0.01 - ancho_columna;
+            }
+            else
+            {
+                tabla_x = ANCHO_PANTALLA * 0.42f;
+                ancho_columna = ANCHO_PANTALLA * 0.57f;
+            }
+
+            // Área clickeable
+            float area_x_inicio = tabla_x;
+            float area_x_fin = tabla_x + ancho_columna;
+
+            if (posicion_mouse.x >= area_x_inicio && posicion_mouse.x <= area_x_fin &&
                 posicion_mouse.y >= contenedor_y && posicion_mouse.y <= contenedor_y + contenedor_altura)
             {
                 int fila = (posicion_mouse.y - contenedor_y) / fila_altura;
@@ -87,14 +111,32 @@ int main()
                         nueva_cancion = nueva_cancion->siguiente;
                     }
 
-                    cambiar_cancion_actual(&cancion_actual, nueva_cancion, &esta_reproduciendo);
-                    cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
-
-                    int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
-                    if (nuevo_inicio != scroll.inicio)
+                    if (nueva_cancion != NULL && nueva_cancion != cancion_actual)
                     {
-                        scroll.target_inicio = nuevo_inicio;
-                        scroll.scrolling = true;
+                        cambiar_cancion_actual(&cancion_actual, nueva_cancion, &esta_reproduciendo);
+                        cancion_seleccionada = obtener_indice_cancion(playlist, cancion_actual, total_canciones);
+
+                        int nuevo_inicio = calcular_inicio_para_centrar(cancion_seleccionada, total_canciones);
+                        if (nuevo_inicio != scroll.inicio)
+                        {
+                            scroll.target_inicio = nuevo_inicio;
+                            scroll.scrolling = true;
+                        }
+
+                        // Solo en modo visual: cargar audio si es distinto
+                        if (multimedia && strcmp(nueva_cancion->audio, audio_actual.ruta) != 0)
+                        {
+                            if (audio_actual.cargada)
+                            {
+                                StopMusicStream(audio_actual.musica);
+                                UnloadMusicStream(audio_actual.musica);
+                            }
+                            audio_actual.musica = LoadMusicStream(nueva_cancion->audio);
+                            audio_actual.cargada = true;
+                            strcpy(audio_actual.ruta, nueva_cancion->audio);
+                            audio_actual.duracion = GetMusicTimeLength(audio_actual.musica);
+                            audio_actual.tiempo_actual = 0;
+                        }
                     }
                 }
             }
@@ -210,7 +252,7 @@ int main()
         // PANTALLA DE PRESENTACIÓN
         if (!pantalla_desarrollador_activa)
         {
-            pantalla_desarrollador(fuente_titulo, fuente1, fuente2);
+            pantalla_desarrollador(logo, fuente_titulo, fuente1, fuente2);
             pantalla_desarrollador_activa = true;
         }
 
@@ -218,7 +260,7 @@ int main()
         float escala = fmaxf((float)ANCHO_PANTALLA / ANCHO_FONDO, (float)ALTO_PANTALLA / ALTO_FONDO);
         DrawTexturePro(fondo, (Rectangle){0, 0, ANCHO_FONDO, ALTO_FONDO}, (Rectangle){(ANCHO_PANTALLA - ANCHO_FONDO * escala) * 0.5f, (ALTO_PANTALLA - ALTO_FONDO * escala) * 0.5f, ANCHO_FONDO * escala, ALTO_FONDO * escala}, (Vector2){0, 0}, 0.0f, WHITE);
 
-        secciones_visuales_encabezados();
+        secciones_visuales_encabezados(logo);
         // PARTE SUPERIOR
         if (busqueda)
         {
@@ -283,7 +325,7 @@ int main()
             // Dibujar ambos botones normalmente
             if (manejar_boton_simple(boton_agregar))
             {
-                formulario(&playlist, total_canciones, fondo, fuente_titulo, fuente1, fuente2);
+                formulario(&playlist, &total_canciones, fondo, fuente_titulo, fuente1, fuente2);
             }
 
             if (manejar_boton_simple(boton_buscar) || IsKeyPressed(KEY_F))
@@ -397,22 +439,23 @@ int main()
         {
             if (manejar_boton_simple(boton_silenciar_volumen))
             {
-                mutear = true;
-                SetMasterVolume(0.5f);
+                mutear = false;
+                SetMasterVolume(0.5f); // Restaurar volumen al desactivar mute
             }
         }
         else
         {
             if (manejar_boton_simple(boton_activar_volumen))
             {
-                mutear = false;
-                SetMasterVolume(0.0f);
+                mutear = true;
+                SetMasterVolume(0.0f); // Silenciar al activar mute
             }
         }
 
         EndDrawing();
     }
 
+     UnloadTexture(logo);
     UnloadTexture(fondo);
     UnloadFont(fuente_titulo);
     UnloadFont(fuente1);

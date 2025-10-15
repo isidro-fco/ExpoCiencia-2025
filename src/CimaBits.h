@@ -51,14 +51,14 @@ Boton_Interfaz boton_cancelar_forms;
 //  PROTOTIPOS
 //**************************************************************************************************************************
 Vector2 centrar_texto_horizontal(Font fuente, const char *texto, float tamanio_fuente, float espaciado, float posision_y);
-void pantalla_desarrollador(Font fuente1, Font fuente2, Font fuente3);
-void secciones_visuales_encabezados();
+void pantalla_desarrollador(Texture2D logo, Font fuente1, Font fuente2, Font fuente3);
+void secciones_visuales_encabezados(Texture2D logo);
 void secciones_visuales_musica(CancionPTR *playlist, CancionPTR actual, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo, Font fuente1, Font fuente2);
 void dibujar_imagen(CancionPTR visibles, Rectangle dest);
 void el_descargador_de_imagenes(CancionPTR playlist);
 void secciones_visuales_video(CancionPTR *playlist, CancionPTR actual, int total_canciones, Estado_Scroll posision_scroll, int cancion_seleccionada, bool esta_reproduciendo, Font fuente1, Font fuente2);
 void configurar_botones();
-int formulario(CancionPTR *playlist, int total_canciones, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3);
+int formulario(CancionPTR *playlist, int *total_canciones, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3);
 void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproduciendo);
 void ver_video(Texture2D *frames, int total_frames, int *frame_actual, float *tiempo_frame, float intervalo, float x, float y, float escala, bool pausa);
 //**************************************************************************************************************************
@@ -71,16 +71,15 @@ Vector2 centrar_texto_horizontal(Font fuente, const char *texto, float tamanio_f
     return (Vector2){posision_x, posision_y};
 }
 //**************************************************************************************************************************
-void pantalla_desarrollador(Font fuente1, Font fuente2, Font fuente3)
+void pantalla_desarrollador(Texture2D logo, Font fuente1, Font fuente2, Font fuente3)
 {
     // VARIABLES LOCALES
     bool tiempo_terminado = false;
-    Texture2D logo = LoadTexture("assets/logo.png");
     double tiempoInicio = GetTime();
     double duracion = 4.0;
     float escala = 0.7f;
-    float posX = (ANCHO_PANTALLA - logo.width * escala) / 2;
-    float posY = (ALTO_PANTALLA - logo.height * escala) / 2;
+    float posision_x = (ANCHO_PANTALLA - logo.width * escala) / 2;
+    float posision_y = (ALTO_PANTALLA - logo.height * escala) / 2;
 
     // AQUI EMPIEZA EL CODIGO
     SetTextureFilter(logo, TEXTURE_FILTER_BILINEAR);
@@ -95,7 +94,7 @@ void pantalla_desarrollador(Font fuente1, Font fuente2, Font fuente3)
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        DrawTextureEx(logo, (Vector2){posX, posY}, 0.0f, escala, WHITE);
+        DrawTextureEx(logo, (Vector2){posision_x, posision_y}, 0.0f, escala, WHITE);
         DrawTextEx(fuente3, "DESARROLLADO PARA:", centrar_texto_horizontal(fuente2, "DESARROLLADO PARA:", TAMANIO_FUENTE_SEC, 1, 720), TAMANIO_FUENTE_SEC, 0, color_verde);
         DrawTextEx(fuente3, "EXPOCIENCIA 2025", centrar_texto_horizontal(fuente2, "EXPOCIENCIA 2025", TAMANIO_FUENTE, 1, 760), TAMANIO_FUENTE, 0, color_verde_claro);
 
@@ -104,16 +103,19 @@ void pantalla_desarrollador(Font fuente1, Font fuente2, Font fuente3)
 
     BeginDrawing();
     EndDrawing();
-
-    UnloadTexture(logo);
 }
 //**************************************************************************************************************************
-void secciones_visuales_encabezados()
+void secciones_visuales_encabezados(Texture2D logo)
 {
+    float escala = 0.3f;
+    float posision_x = 8;
+    float posision_y = (ALTO_PANTALLA * 0.15 - logo.height * escala) / 2;
+
     DrawTriangle((Vector2){0, 0}, (Vector2){0, 39}, (Vector2){39, 0}, color_blanco);
     DrawTriangle((Vector2){ANCHO_PANTALLA, 0}, (Vector2){ANCHO_PANTALLA - 39, 0}, (Vector2){ANCHO_PANTALLA, 39}, color_blanco);
     DrawRectangleRounded((Rectangle){0, 0, ANCHO_PANTALLA, ALTO_PANTALLA * 0.15}, REDONDEZ + 0.1, SEGMENTOS, color_fondo);
     DrawRectangleRoundedLinesEx((Rectangle){8, 8, ANCHO_PANTALLA - 16, ALTO_PANTALLA * 0.135}, REDONDEZ, SEGMENTOS, 8, color_blanco);
+    DrawTextureEx(logo, (Vector2){posision_x, posision_y}, 0.0f, escala, WHITE);
 
     DrawTriangle((Vector2){0, ALTO_PANTALLA}, (Vector2){39, ALTO_PANTALLA}, (Vector2){0, ALTO_PANTALLA - 39}, color_blanco);
     DrawTriangle((Vector2){ANCHO_PANTALLA, ALTO_PANTALLA}, (Vector2){ANCHO_PANTALLA, ALTO_PANTALLA - 39}, (Vector2){ANCHO_PANTALLA - 39, ALTO_PANTALLA}, color_blanco);
@@ -317,6 +319,22 @@ void secciones_visuales_video(CancionPTR *playlist, CancionPTR actual, int total
         {
             DrawRectangleRounded((Rectangle){tabla_x, y, ancho_columna - 6, altura_fila - 6}, REDONDEZ, SEGMENTOS, color_verde);
             ultima_cancion_seleccionada = visible;
+            if (ultima_cancion_seleccionada != NULL)
+            {
+                if (strcmp(ultima_cancion_seleccionada->audio, audio_actual.ruta) != 0)
+                {
+                    if (audio_actual.cargada)
+                    {
+                        StopMusicStream(audio_actual.musica);
+                        UnloadMusicStream(audio_actual.musica);
+                    }
+                    audio_actual.musica = LoadMusicStream(ultima_cancion_seleccionada->audio);
+                    audio_actual.cargada = true;
+                    strcpy(audio_actual.ruta, ultima_cancion_seleccionada->audio);
+                    audio_actual.duracion = GetMusicTimeLength(audio_actual.musica);
+                    audio_actual.tiempo_actual = 0;
+                }
+            }
         }
         else
         {
@@ -476,7 +494,7 @@ void configurar_botones()
             textura_silenciar.height * escala}};
 }
 //**************************************************************************************************************************
-int formulario(CancionPTR *playlist, int total_canciones, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3)
+int formulario(CancionPTR *playlist, int *total_canciones, Texture2D fondo, Font fuente1, Font fuente2, Font fuente3)
 {
     bool formulario_completado = false;
     bool duracion_valida = false;
@@ -743,7 +761,7 @@ int formulario(CancionPTR *playlist, int total_canciones, Texture2D fondo, Font 
                     duracion_valida && audio_cargado)
                 {
                     formulario_completado = true;
-                    total_canciones++;
+                    (*total_canciones)++;
                 }
             }
             else if (CheckCollisionPointRec(posicion_mouse, boton_cancelar))
@@ -873,15 +891,15 @@ int formulario(CancionPTR *playlist, int total_canciones, Texture2D fondo, Font 
         // PROCESAR RESULTADO
         if (formulario_completado)
         {
-            printf("entre");
             agregar_cancion(playlist, titulo, artista, duracion, ruta_imagen, ruta_audio, ruta_video, insertar);
-            mostrarPlaylist(*playlist);
             if (imagen_cargada)
                 UnloadTexture(img_portada);
             if (audio_cargado)
                 UnloadSound(audio);
             if (video_cargado)
                 UnloadDirectoryFiles(video); // AÑADIDO: Descargar video
+
+            total_canciones++;
 
             return 1; // Éxito
         }
@@ -895,7 +913,6 @@ int formulario(CancionPTR *playlist, int total_canciones, Texture2D fondo, Font 
 
     return 0;
 }
-
 //**************************************************************************************************************************
 void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproduciendo)
 {
@@ -918,12 +935,47 @@ void dibujar_linea_tiempo(Estado_Audio *audio, Font fuente, bool esta_reproducie
         }
     }
 
-    // Dibujar barra de progreso
-    DrawRectangleRounded((Rectangle){barra_x, barra_y, barra_width, barra_height}, REDONDEZ + 0.5, SEGMENTOS, color_amarillo);
+    // Calcular progreso
     float progreso = (audio->duracion > 0) ? (audio->tiempo_actual / audio->duracion) : 0;
+
+    // Verificar interacción con el mouse
+    Rectangle barra_rect = {barra_x, barra_y - 10, barra_width, barra_height + 20}; // Área clickeable más grande
+    Vector2 mouse_pos = GetMousePosition();
+
+    // Comprobar si el mouse está sobre la barra
+    bool mouse_sobre_barra = CheckCollisionPointRec(mouse_pos, barra_rect);
+
+    // Comprobar clic en la barra
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && mouse_sobre_barra)
+    {
+        // Calcular nuevo tiempo basado en la posición del click
+        float click_pos = (mouse_pos.x - barra_x) / barra_width;
+        click_pos = fmaxf(0.0f, fminf(1.0f, click_pos)); // Clamp entre 0 y 1
+
+        audio->tiempo_actual = click_pos * audio->duracion;
+
+        // Actualizar la posición de reproducción en la música
+        SeekMusicStream(audio->musica, audio->tiempo_actual);
+    }
+
+    // Dibujar barra de progreso (fondo)
+    DrawRectangleRounded((Rectangle){barra_x, barra_y, barra_width, barra_height}, REDONDEZ + 0.5, SEGMENTOS, color_amarillo);
+
+    // Dibujar progreso actual
     DrawRectangleRounded((Rectangle){barra_x, barra_y, barra_width * progreso, barra_height}, REDONDEZ + 0.5, SEGMENTOS + 90, color_verde);
-    DrawCircle(barra_x + (barra_width * progreso), barra_y + 20, 25, color_verde_claro);
-    DrawCircle(barra_x + (barra_width * progreso), barra_y + 20, 18, color_verde);
+
+    // Dibujar círculo indicador (cambia de color cuando el mouse está sobre la barra)
+    Color color_circulo_exterior = mouse_sobre_barra ? color_verde_claro : color_verde;
+    Color color_circulo_interior = mouse_sobre_barra ? color_verde : color_verde_claro;
+
+    DrawCircle(barra_x + (barra_width * progreso), barra_y + 20, 25, color_circulo_exterior);
+    DrawCircle(barra_x + (barra_width * progreso), barra_y + 20, 18, color_circulo_interior);
+
+    // Cambiar cursor cuando está sobre la barra
+    if (mouse_sobre_barra)
+    {
+        SetMouseCursor(MOUSE_CURSOR_POINTING_HAND);
+    }
 
     // Dibujar tiempos
     char tiempo_actual_str[10];
@@ -945,10 +997,8 @@ void ver_video(Texture2D *frames, int total_frames, int *frame_actual, float *ti
 {
     if (pausa)
     {
-           *tiempo_frame += GetFrameTime();
+        *tiempo_frame += GetFrameTime();
     }
-    
-
 
     if (total_frames > 0)
     {
@@ -960,9 +1010,9 @@ void ver_video(Texture2D *frames, int total_frames, int *frame_actual, float *ti
 
         Texture2D frame = frames[*frame_actual];
 
-        Rectangle src = { 0, 0, frame.width, frame.height };
-        Rectangle dest = { x, y, frame.width * escala, frame.height * escala };
-        Vector2 origin = { 0, 0 };
+        Rectangle src = {0, 0, frame.width, frame.height};
+        Rectangle dest = {x, y, frame.width * escala, frame.height * escala};
+        Vector2 origin = {0, 0};
 
         DrawTexturePro(frame, src, dest, origin, 0.0f, WHITE);
         DrawText(TextFormat("Frame %d / %d", *frame_actual + 1, total_frames), 20, 20, 20, GREEN);
